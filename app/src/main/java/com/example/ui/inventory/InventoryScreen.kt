@@ -61,6 +61,7 @@ import androidx.compose.material.icons.filled.NorthWest
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.SubdirectoryArrowRight
 import androidx.compose.material.icons.filled.Tune
@@ -157,6 +158,7 @@ fun InventoryScreen(
     val sortOption by viewModel.sortOption.collectAsStateWithLifecycle()
     val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
     val isOperationRunning by viewModel.isOperationRunning.collectAsStateWithLifecycle()
+    val isDpUnlocked by com.example.data.util.SecurityGuard.isOwnerDpUnlocked.collectAsStateWithLifecycle()
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showBatchModelDialog by remember { mutableStateOf(false) }
@@ -167,6 +169,7 @@ fun InventoryScreen(
     var itemForDetail by remember { mutableStateOf<ElectronicsItem?>(null) }
     var itemToRequestStock by remember { mutableStateOf<ElectronicsItem?>(null) }
     var showStockRequestsDialog by remember { mutableStateOf(false) }
+    var showSecurityShieldDialog by remember { mutableStateOf(false) }
     var showClearInventoryConfirm by remember { mutableStateOf(false) }
     var showLogsSheet by remember { mutableStateOf(false) }
     var showStaffDialog by remember { mutableStateOf(false) }
@@ -537,6 +540,36 @@ fun InventoryScreen(
                         .testTag("sidebar_nav_audit_logs")
                 )
 
+                // Sidebar Option 7b: Security & Protection Guard
+                NavigationDrawerItem(
+                    label = {
+                        Column {
+                            Text("Security & Protection Guard")
+                            Text(
+                                "Zero-trust DP privacy & defenses",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontSize = 10.sp
+                            )
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showSecurityShieldDialog = true
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = Color(0xFF0F766E)
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_security")
+                )
+
                 // Sidebar Option 8: Clear All Inventory / Wipe Dummy Data (Owner only)
                 if (canViewCosts) {
                     NavigationDrawerItem(
@@ -700,6 +733,15 @@ fun InventoryScreen(
                             imageVector = Icons.Default.History,
                             contentDescription = "Audit Activity Log",
                             tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Security & Protection Guard button
+                    IconButton(onClick = { showSecurityShieldDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = "Security & Protection Guard",
+                            tint = Color(0xFF0F766E)
                         )
                     }
 
@@ -885,6 +927,8 @@ fun InventoryScreen(
                             ElectronicsItemCard(
                                 item = item,
                                 canViewCosts = canViewCosts,
+                                isDpUnlocked = isDpUnlocked,
+                                onUnlockDp = { showSecurityShieldDialog = true },
                                 canEdit = canEditItemDetails,
                                 canDelete = canDeleteItems,
                                 onViewDetail = { itemForDetail = item },
@@ -1168,6 +1212,15 @@ fun InventoryScreen(
                 viewModel.deleteStaffMember(staffId)
             },
             onDismiss = { showStaffDialog = false }
+        )
+    }
+
+    // Security & Protection Guard Dialog
+    if (showSecurityShieldDialog) {
+        SecurityShieldDialog(
+            isOwnerRole = canViewCosts,
+            currentStaffPin = staff?.pin,
+            onDismiss = { showSecurityShieldDialog = false }
         )
     }
 
@@ -2012,6 +2065,8 @@ private fun StockFilterChipsRow(
 private fun ElectronicsItemCard(
     item: ElectronicsItem,
     canViewCosts: Boolean,
+    isDpUnlocked: Boolean = true,
+    onUnlockDp: () -> Unit = {},
     canEdit: Boolean,
     canDelete: Boolean,
     onViewDetail: () -> Unit,
@@ -2153,26 +2208,31 @@ private fun ElectronicsItemCard(
                 }
 
                 if (canViewCosts) {
-                    Column(horizontalAlignment = Alignment.End) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.clickable {
+                            if (!isDpUnlocked) onUnlockDp()
+                        }
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "DP Price: ${currencyFormat.format(item.costPrice)}",
+                                text = if (isDpUnlocked) "DP Price: ${currencyFormat.format(item.costPrice)}" else "DP: ••••••",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary
+                                color = if (isDpUnlocked) Color(0xFF0F766E) else MaterialTheme.colorScheme.secondary
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = "Owner DP Price",
+                                imageVector = if (isDpUnlocked) Icons.Default.Lock else Icons.Default.Lock,
+                                contentDescription = if (isDpUnlocked) "Owner DP Price" else "Locked DP Price - Tap to unlock",
                                 modifier = Modifier.size(11.dp),
-                                tint = MaterialTheme.colorScheme.secondary
+                                tint = if (isDpUnlocked) Color(0xFF0F766E) else MaterialTheme.colorScheme.secondary
                             )
                         }
                         Text(
-                            text = "Margin: ${String.format(Locale.US, "%.1f%%", item.profitMarginPercent)}",
+                            text = if (isDpUnlocked) "Margin: ${String.format(Locale.US, "%.1f%%", item.profitMarginPercent)}" else "🔒 Tap to unlock",
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (item.profitMarginPercent > 20.0) StockInStock else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (isDpUnlocked && item.profitMarginPercent > 20.0) StockInStock else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold
                         )
                     }

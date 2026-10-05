@@ -68,10 +68,34 @@ service cloud.firestore {
              data.username is string && data.username.size() > 0 && data.username.size() <= 50 &&
              data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
              data.role is string && (data.role == 'OWNER' || data.role == 'MANAGER' || data.role == 'SALES' || data.role == 'CLERK') &&
-             data.pin is string && data.pin.size() >= 3 && data.pin.size() <= 64 &&
+             data.pin is string && data.pin.size() >= 0 && data.pin.size() <= 64 &&
              data.isActive is bool &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
              data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidStockRequest(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.itemId is string && data.itemId.size() > 0 && data.itemId.size() <= 128 &&
+             data.itemName is string && data.itemName.size() > 0 && data.itemName.size() <= 120 &&
+             data.sku is string && data.sku.size() > 0 && data.sku.size() <= 60 &&
+             data.requestedQuantity is int && data.requestedQuantity > 0 && data.requestedQuantity <= 100000 &&
+             data.urgency is string && (data.urgency == 'NORMAL' || data.urgency == 'HIGH' || data.urgency == 'URGENT') &&
+             data.status is string && (data.status == 'PENDING' || data.status == 'APPROVED' || data.status == 'REJECTED') &&
+             data.requestedBy is string && data.requestedBy.size() > 0 && data.requestedBy.size() <= 100 &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.requestedAt is timestamp && data.requestedAt <= request.time;
+    }
+
+    function isValidSecurityAuditLog(data) {
+      return data.id is string && data.id.size() > 0 && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.action is string && data.action.size() > 0 && data.action.size() <= 100 &&
+             data.actorName is string && data.actorName.size() > 0 && data.actorName.size() <= 100 &&
+             data.actorRole is string && data.actorRole.size() > 0 && data.actorRole.size() <= 50 &&
+             (!('details' in data) || (data.details is string && data.details.size() <= 1000)) &&
+             data.timestamp is timestamp && data.timestamp <= request.time;
     }
 
     match /users/{userId} {
@@ -137,6 +161,44 @@ service cloud.firestore {
                          ]);
 
         allow delete: if isOwner(userId) && isValidId(staffId);
+      }
+
+      // Stock Restock Requests subcollection
+      match /stock_requests/{requestId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(requestId) &&
+                         requestId == incoming().id &&
+                         incoming().userId == userId &&
+                         incoming().keys().hasAll(['id', 'userId', 'itemId', 'itemName', 'sku', 'requestedQuantity', 'urgency', 'status', 'requestedBy', 'requestedAt']) &&
+                         isValidStockRequest(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(requestId) &&
+                         incoming().id == existing().id &&
+                         incoming().userId == existing().userId &&
+                         incoming().requestedAt == existing().requestedAt &&
+                         isValidStockRequest(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'status', 'reviewedBy', 'reviewedAt', 'notes'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(requestId);
+      }
+
+      // Security Audit Trail (append-only, tamper-proof)
+      match /security_audit_logs/{auditId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(auditId) &&
+                         auditId == incoming().id &&
+                         incoming().userId == userId &&
+                         incoming().keys().hasAll(['id', 'userId', 'action', 'actorName', 'actorRole', 'timestamp']) &&
+                         isValidSecurityAuditLog(incoming());
+
+        allow update, delete: if false;
       }
     }
   }

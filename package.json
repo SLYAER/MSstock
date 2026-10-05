@@ -5,6 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "echo \"Vercel build succeeded\""
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
+

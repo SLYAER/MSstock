@@ -37,246 +37,28 @@ const INITIAL_STAFF = [
   }
 ];
 
-const INITIAL_ITEMS = [
-  {
-    id: "item_led_haier_55",
-    name: "Haier 55\" 4K Bezel-Less Google LED TV",
-    sku: "ELEC-TV-H55U6G",
-    category: "LED TV",
-    brand: "Haier",
-    size: "55\"",
-    model: "55U6G",
-    quantity: 5,
-    minStockThreshold: 2,
-    costPrice: 420.00,
-    sellingPrice: 549.99,
-    condition: "NEW",
-    location: "Aisle 1 - TV Bay A",
-    warrantyMonths: 24,
-    notes: "Dolby Vision, 120Hz DLG Gaming mode",
-    createdAt: 1000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_led_onida_55",
-    name: "Onida 55\" 4K UHD Fire TV Edition",
-    sku: "ELEC-TV-O55UIF",
-    category: "LED TV",
-    brand: "Onida",
-    size: "55\"",
-    model: "55UIF",
-    quantity: 4,
-    minStockThreshold: 2,
-    costPrice: 380.00,
-    sellingPrice: 499.00,
-    condition: "NEW",
-    location: "Aisle 1 - TV Bay B",
-    warrantyMonths: 12,
-    notes: "Built-in Fire TV OS, Alexa Voice Remote",
-    createdAt: 2000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_led_sony_55",
-    name: "Sony 55\" BRAVIA XR Full Array LED 4K",
-    sku: "ELEC-TV-SNY55X90",
-    category: "LED TV",
-    brand: "Sony",
-    size: "55\"",
-    model: "BRAVIA-55X90L",
-    quantity: 6,
-    minStockThreshold: 3,
-    costPrice: 850.00,
-    sellingPrice: 1098.00,
-    condition: "NEW",
-    location: "Aisle 1 - Premium Wall 1",
-    warrantyMonths: 36,
-    notes: "XR Cognitive Processor, HDMI 2.1 4K120 for PS5",
-    createdAt: 3000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_led_samsung_55",
-    name: "Samsung 55\" Crystal UHD 4K Smart TV",
-    sku: "ELEC-TV-SAM55CU",
-    category: "LED TV",
-    brand: "Samsung",
-    size: "55\"",
-    model: "UA55CU7700",
-    quantity: 7,
-    minStockThreshold: 3,
-    costPrice: 510.00,
-    sellingPrice: 649.99,
-    condition: "NEW",
-    location: "Aisle 1 - TV Bay C",
-    warrantyMonths: 24,
-    notes: "PurColor, Crystal Processor 4K",
-    createdAt: 4000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_led_lg_55_std",
-    name: "LG 55\" 4K Ultra HD Smart LED TV",
-    sku: "ELEC-TV-LG55LE",
-    category: "LED TV",
-    brand: "LG",
-    size: "55\"",
-    model: "55LE5000",
-    quantity: 3,
-    minStockThreshold: 2,
-    costPrice: 460.00,
-    sellingPrice: 589.00,
-    condition: "NEW",
-    location: "Aisle 1 - TV Bay D",
-    warrantyMonths: 24,
-    notes: "webOS 23, ThinQ AI, HDR10 Pro",
-    createdAt: 5000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_led_lg_55_oled",
-    name: "LG 55\" OLED evo 4K Smart Cinema TV",
-    sku: "ELEC-TV-LGOLED55",
-    category: "LED TV",
-    brand: "LG",
-    size: "55\"",
-    model: "OLED55C3",
-    quantity: 2,
-    minStockThreshold: 2,
-    costPrice: 1100.00,
-    sellingPrice: 1396.99,
-    condition: "NEW",
-    location: "Aisle 1 - OLED Showcase",
-    warrantyMonths: 36,
-    notes: "Infinite contrast, G-Sync, 0.1ms response",
-    createdAt: 6000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_led_haier_43",
-    name: "Haier 43\" Smart Bezel-Less LED TV",
-    sku: "ELEC-TV-H43A6H",
-    category: "LED TV",
-    brand: "Haier",
-    size: "43\"",
-    model: "43A6H",
-    quantity: 8,
-    minStockThreshold: 3,
-    costPrice: 280.00,
-    sellingPrice: 369.00,
-    condition: "NEW",
-    location: "Aisle 2 - Compact TVs",
-    warrantyMonths: 24,
-    notes: "Google TV OS with Chromecast built-in",
-    createdAt: 7000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_led_onida_32",
-    name: "Onida 32\" HD Ready Fire TV",
-    sku: "ELEC-TV-O32HIF",
-    category: "LED TV",
-    brand: "Onida",
-    size: "32\"",
-    model: "32HIF",
-    quantity: 12,
-    minStockThreshold: 4,
-    costPrice: 130.00,
-    sellingPrice: 179.99,
-    condition: "NEW",
-    location: "Aisle 2 - Entry TVs",
-    warrantyMonths: 12,
-    notes: "Lucid 3 Picture Engine, 20W Dolby Audio",
-    createdAt: 8000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_phone_iphone16p",
-    name: "Apple iPhone 16 Pro 256GB Natural Titanium",
-    sku: "ELEC-IP16P-256",
-    category: "Smartphones",
-    brand: "Apple",
-    size: "6.3\"",
-    model: "A3293",
-    quantity: 6,
-    minStockThreshold: 2,
-    costPrice: 899.00,
-    sellingPrice: 1099.00,
-    condition: "NEW",
-    location: "Display Cabinet A - Premium",
-    warrantyMonths: 12,
-    notes: "A18 Pro chip, 48MP Fusion Camera, Apple Intelligence",
-    createdAt: 9000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_laptop_macbook16",
-    name: "Apple MacBook Pro 16\" M3 Max 36GB / 1TB SSD",
-    sku: "ELEC-MBP16-M3X",
-    category: "Laptops & PCs",
-    brand: "Apple",
-    size: "16.2\"",
-    model: "MK183LL/A",
-    quantity: 3,
-    minStockThreshold: 1,
-    costPrice: 2850.00,
-    sellingPrice: 3499.00,
-    condition: "NEW",
-    location: "Display Island B - Laptops",
-    warrantyMonths: 12,
-    notes: "Liquid Retina XDR, Space Black",
-    createdAt: 10000,
-    updatedAt: Date.now()
-  },
-  {
-    id: "item_audio_sony_xm5",
-    name: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-    sku: "ELEC-SNY-XM5",
-    category: "Audio & Headphones",
-    brand: "Sony",
-    size: "Over-Ear",
-    model: "WH-1000XM5",
-    quantity: 9,
-    minStockThreshold: 3,
-    costPrice: 279.00,
-    sellingPrice: 399.99,
-    condition: "NEW",
-    location: "Audio Wall Bay 3",
-    warrantyMonths: 12,
-    notes: "Industry-leading noise cancellation, 30h battery",
-    createdAt: 11000,
-    updatedAt: Date.now()
-  }
-];
+const INITIAL_ITEMS = [];
 
 // Helper to load or initialize DB
 function getDatabase() {
   try {
     if (fs.existsSync(DB_FILE)) {
       const data = fs.readFileSync(DB_FILE, 'utf8');
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (!parsed.stock_requests) parsed.stock_requests = [];
+      if (!parsed.items) parsed.items = [];
+      if (!parsed.logs) parsed.logs = [];
+      if (!parsed.staff) parsed.staff = INITIAL_STAFF;
+      return parsed;
     }
   } catch (err) {
     console.error('Error reading DB file, reinitializing', err);
   }
   const db = {
     staff: INITIAL_STAFF,
-    items: INITIAL_ITEMS,
-    logs: [
-      {
-        id: "log_init",
-        itemId: "item_led_haier_55",
-        itemName: "Haier 55\" 4K Bezel-Less Google LED TV",
-        sku: "ELEC-TV-H55U6G",
-        actionType: "RESTOCK",
-        changeAmount: 5,
-        newQuantity: 5,
-        staffName: "PARTH MEHTA",
-        staffRole: "OWNER",
-        reason: "Initial Store Catalog Inventory Seed",
-        timestamp: Date.now()
-      }
-    ]
+    items: [],
+    logs: [],
+    stock_requests: []
   };
   saveDatabase(db);
   return db;
@@ -516,12 +298,23 @@ function getAppHtml() {
 
       <!-- Sidebar Functional Navigation -->
       <div class="sidebar-menu">
-        <div class="sidebar-section-title">INVENTORY & SALES</div>
+        <div class="sidebar-section-title">INVENTORY & PRODUCTS</div>
 
         <button class="nav-btn active" id="navStockBtn" onclick="selectSidebarView('stock')">
           <span class="nav-icon">📦</span>
           <span>Stock Catalog</span>
-          <span class="nav-badge" id="sidebarTotalCount">11</span>
+          <span class="nav-badge" id="sidebarTotalCount">0</span>
+        </button>
+
+        <button class="nav-btn" id="navAddStockBtn" onclick="openAddProductModal()">
+          <span class="nav-icon">➕</span>
+          <span>Add Product / Model</span>
+        </button>
+
+        <button class="nav-btn" id="navBatchModelsBtn" onclick="openBatchModelsModal()">
+          <span class="nav-icon">⚡</span>
+          <span>Add Multiple Models</span>
+          <span class="nav-badge" style="background:#fef3c7;color:#92400e;">Batch</span>
         </button>
 
         <button class="nav-btn" id="navTvExplorerBtn" onclick="openHierarchyModal()">
@@ -529,9 +322,10 @@ function getAppHtml() {
           <span>LED TV Explorer</span>
         </button>
 
-        <button class="nav-btn" id="navAddStockBtn" onclick="openProductModal()">
-          <span class="nav-icon">➕</span>
-          <span>Register Stock</span>
+        <button class="nav-btn" id="navStockRequestsBtn" onclick="openStockRequestsModal()">
+          <span class="nav-icon">📋</span>
+          <span>Stock Requests</span>
+          <span class="nav-badge" id="sidebarRequestsCount" style="background:#ef4444;color:white;display:none;">0</span>
         </button>
 
         <div class="sidebar-section-title">ADMINISTRATION</div>
@@ -554,9 +348,14 @@ function getAppHtml() {
 
         <div class="sidebar-section-title">SYSTEM</div>
 
+        <button class="nav-btn" onclick="clearAllInventory()" style="color: #b91c1c;">
+          <span class="nav-icon">🗑️</span>
+          <span>Clear All Inventory</span>
+        </button>
+
         <button class="nav-btn" onclick="seedSampleCatalog()">
           <span class="nav-icon">🔄</span>
-          <span>Seed Sample Catalog</span>
+          <span>Sample Catalog (Optional)</span>
         </button>
 
         <button class="nav-btn" onclick="openLoginModal()" style="color: var(--danger);">
@@ -811,8 +610,8 @@ function getAppHtml() {
           <label class="form-label">Selling Price ($) *</label>
           <input type="number" id="itemSellingPrice" class="form-control" step="0.01" placeholder="549.99">
         </div>
-        <div class="form-group">
-          <label class="form-label">Wholesale Cost ($)</label>
+        <div class="form-group" id="modalCostPriceGroup">
+          <label class="form-label">DP Price / Cost ($) <span style="color:#047857;font-weight:700;">[Owner Only]</span></label>
           <input type="number" id="itemCostPrice" class="form-control" step="0.01" placeholder="420.00">
         </div>
       </div>
@@ -823,6 +622,119 @@ function getAppHtml() {
       </div>
 
       <button class="btn-submit" onclick="saveProduct()">Save Product to Inventory</button>
+    </div>
+  </div>
+
+  <!-- Modal: Request More Stock -->
+  <div class="modal-overlay" id="requestStockModal">
+    <div class="modal">
+      <button class="close-btn" onclick="closeModal('requestStockModal')">✕</button>
+      <div class="modal-title">📦 Request Stock Restock</div>
+      <div class="modal-sub" id="requestStockSub">Submit restock order request to Store Owner</div>
+
+      <div class="form-group">
+        <label class="form-label">Product / Model *</label>
+        <select id="reqStockItemSelect" class="form-control" onchange="onReqItemSelectChange()"></select>
+      </div>
+
+      <div style="background:var(--surface-variant);padding:10px 14px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;font-size:13px;">
+        <span>Current Stock Level:</span>
+        <strong id="reqStockCurrentLevel">0 units</strong>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Requested Quantity (Units) *</label>
+        <input type="number" id="reqStockQuantity" class="form-control" value="5" min="1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Urgency Level</label>
+        <select id="reqStockUrgency" class="form-control">
+          <option value="NORMAL">Normal Restock</option>
+          <option value="HIGH">High Priority (Customer Waiting)</option>
+          <option value="URGENT">Critical / Urgent (Out of Stock)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Reason / Notes</label>
+        <textarea id="reqStockNotes" class="form-control" rows="2" placeholder="e.g. Model is running low, customer inquiries"></textarea>
+      </div>
+
+      <button class="btn-submit" style="background:#d97706;color:white;" onclick="submitStockRequest()">Submit Stock Request</button>
+    </div>
+  </div>
+
+  <!-- Modal: Stock Requests Management -->
+  <div class="modal-overlay" id="stockRequestsListModal">
+    <div class="modal" style="max-width:720px;">
+      <button class="close-btn" onclick="closeModal('stockRequestsListModal')">✕</button>
+      <div class="modal-title">📋 Stock Requests Management</div>
+      <div class="modal-sub">Restock requests submitted by sales associates for store fulfillment</div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-sm" id="filterReqAll" style="background:var(--primary);color:white;" onclick="filterRequests('ALL')">All Requests</button>
+        <button class="btn-sm btn-secondary" id="filterReqPending" onclick="filterRequests('PENDING')">Pending Only</button>
+        <button class="btn-sm btn-secondary" id="filterReqApproved" onclick="filterRequests('APPROVED')">Approved</button>
+        <button class="btn-sm btn-secondary" id="filterReqRejected" onclick="filterRequests('REJECTED')">Rejected</button>
+        <button class="btn-sm" style="background:#d97706;color:white;margin-left:auto;" onclick="openRequestStockModal()">+ Request Stock</button>
+      </div>
+
+      <div id="stockRequestsListContent" style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Batch Add Models -->
+  <div class="modal-overlay" id="batchModelsModal">
+    <div class="modal" style="max-width: 650px;">
+      <button class="close-btn" onclick="closeModal('batchModelsModal')">✕</button>
+      <div class="modal-title">⚡ Quick Add Models (Batch Wizard)</div>
+      <div class="modal-sub">Register multiple product model numbers into store inventory in one click</div>
+
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="batchCategory" class="form-control" onchange="onBatchCategoryChange()">
+          <option value="LED TV">LED TV</option>
+          <option value="Smartphones">Smartphones</option>
+          <option value="Laptops & PCs">Laptops & PCs</option>
+          <option value="Audio & Headphones">Audio & Headphones</option>
+          <option value="Gaming & Displays">Gaming & Displays</option>
+          <option value="Accessories">Accessories</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Brand Name *</label>
+        <input type="text" id="batchBrand" class="form-control" value="Haier" placeholder="e.g. Haier, Onida, Sony, Samsung, LG">
+      </div>
+
+      <div class="form-group" id="batchSizeGroup">
+        <label class="form-label">Screen Size (for TV)</label>
+        <input type="text" id="batchSize" class="form-control" value="55&quot;" placeholder="e.g. 55&quot;, 43&quot;, 65&quot;">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Model Numbers (Comma or Line separated) *</label>
+        <textarea id="batchModelsInput" class="form-control" rows="3" placeholder="e.g. 55U6G, 55UIF, 43K6600, KD-55X74L">55U6G, 55UIF, 55K6600, 55P735</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">Initial Units Each</label>
+          <input type="number" id="batchQuantity" class="form-control" value="5" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Selling Price ($)</label>
+          <input type="number" id="batchSellingPrice" class="form-control" value="499.99" step="0.01">
+        </div>
+      </div>
+
+      <div class="form-group" id="batchCostPriceGroup">
+        <label class="form-label">DP Price / Cost ($) <span style="color:#047857;font-weight:700;">[Owner Only]</span></label>
+        <input type="number" id="batchCostPrice" class="form-control" value="380.00" step="0.01">
+      </div>
+
+      <button class="btn-submit" style="background:#d97706;color:white;" onclick="submitBatchModels()">⚡ Add Models to Store Inventory</button>
     </div>
   </div>
 
@@ -902,9 +814,10 @@ function getAppHtml() {
       try {
         const res = await fetch('/api/data');
         const data = await res.json();
-        appState.items = data.items;
-        appState.staff = data.staff;
-        appState.logs = data.logs;
+        appState.items = data.items || [];
+        appState.staff = data.staff || [];
+        appState.logs = data.logs || [];
+        appState.stock_requests = data.stock_requests || [];
 
         // Default to PARTH MEHTA as active session
         if (!appState.currentStaff) {
@@ -937,6 +850,18 @@ function getAppHtml() {
       const marginCard = document.getElementById('statMarginCard');
       if (marginCard) {
         marginCard.style.display = isOwner ? 'block' : 'none';
+      }
+
+      const costGroup = document.getElementById('modalCostPriceGroup');
+      if (costGroup) {
+        costGroup.style.display = isOwner ? 'block' : 'none';
+      }
+
+      const pendingCount = (appState.stock_requests || []).filter(r => r.status === 'PENDING').length;
+      const badge = document.getElementById('sidebarRequestsCount');
+      if (badge) {
+        badge.textContent = pendingCount;
+        badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
       }
     }
 
@@ -998,7 +923,18 @@ function getAppHtml() {
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 48px; color: var(--text-muted); font-size: 15px;">No products match your search or filter criteria.</div>';
+        grid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: var(--surface); border: 1.5px dashed var(--border); border-radius: 16px;">
+            <div style="font-size: 38px; margin-bottom: 12px;">📦</div>
+            <div style="font-weight: 800; font-size: 18px; color: var(--text);">No Products in Catalog</div>
+            <div style="font-size: 13px; color: var(--text-muted); margin: 6px auto 20px; max-width: 480px;">Your store catalog is ready! Add individual products or use the fast batch wizard to register models.</div>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+              <button class="btn-guided" onclick="openAddProductModal()">➕ Add Product / Model</button>
+              <button class="btn-guided" style="background:#d97706;" onclick="openBatchModelsModal()">⚡ Add Multiple Models</button>
+              <button class="btn-secondary" onclick="seedSampleCatalog()">Preload Sample Catalog (Optional)</button>
+            </div>
+          </div>
+        `;
         return;
       }
 
@@ -1011,20 +947,20 @@ function getAppHtml() {
         const stockText = isOut ? 'Out of Stock (0)' : (isLow ? 'Low Stock (' + item.quantity + ')' : item.quantity + ' in stock');
         const marginPct = item.sellingPrice > 0 ? (((item.sellingPrice - item.costPrice) / item.sellingPrice) * 100).toFixed(1) + '%' : '0%';
 
-        return \`
-          <div class="card" id="card_\${item.id}">
+        return `
+          <div class="card" id="card_${item.id}">
             <div>
               <div class="card-header">
                 <div>
-                  <span class="badge-category">\${item.category}</span>
-                  \${item.size ? '<span class="badge-size">' + item.size + '</span>' : ''}
+                  <span class="badge-category">${item.category}</span>
+                  ${item.size ? '<span class="badge-size">' + item.size + '</span>' : ''}
                 </div>
-                <span class="badge-stock \${stockClass}">\${stockText}</span>
+                <span class="badge-stock ${stockClass}">${stockText}</span>
               </div>
-              <div class="card-title">\${item.name}</div>
+              <div class="card-title">${item.name}</div>
               <div class="card-meta">
-                \${item.brand} • SKU: \${item.sku}
-                \${item.model ? ' • Model: <span class="card-model">' + item.model + '</span>' : ''}
+                ${item.brand} • SKU: ${item.sku}
+                ${item.model ? ' • Model: <span class="card-model">' + item.model + '</span>' : ''}
               </div>
             </div>
 
@@ -1032,22 +968,31 @@ function getAppHtml() {
               <div class="pricing-box">
                 <div>
                   <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">SELLING PRICE</div>
-                  <div class="price-val">$\${Number(item.sellingPrice).toFixed(2)}</div>
+                  <div class="price-val">$${Number(item.sellingPrice).toFixed(2)}</div>
                 </div>
-                \${isOwner ? '<div><div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">MARGIN</div><div class="margin-val">' + marginPct + '</div></div>' : ''}
+                ${isOwner ? `
+                <div>
+                  <div style="font-size: 11px; color: #047857; font-weight: 700;">DP PRICE</div>
+                  <div class="price-val" style="color: #047857;">$${Number(item.costPrice || 0).toFixed(2)}</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">MARGIN</div>
+                  <div class="margin-val">${marginPct}</div>
+                </div>` : ''}
               </div>
 
               <div class="card-actions">
-                <button class="btn-sell" \${isOut ? 'disabled' : ''} onclick="openSaleModal('\${item.id}')">
+                <button class="btn-sell" ${isOut ? 'disabled' : ''} onclick="openSaleModal('${item.id}')">
                   💳 Sell
                 </button>
-                <button class="btn-stock" onclick="quickAdjustStock('\${item.id}', 1)">+ Stock</button>
-                <button class="btn-stock" onclick="quickAdjustStock('\${item.id}', -1)" \${isOut ? 'disabled' : ''}>- Stock</button>
-                <button class="btn-icon" onclick="openEditProductModal('\${item.id}')" title="Edit Product">✏️</button>
+                <button class="btn-stock" onclick="quickAdjustStock('${item.id}', 1)">+ Stock</button>
+                <button class="btn-stock" onclick="quickAdjustStock('${item.id}', -1)" ${isOut ? 'disabled' : ''}>- Stock</button>
+                ${(isLow || isOut || !isOwner) ? `<button class="btn-stock" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;" onclick="openRequestStockModal('${item.id}')" title="Request more stock for this model">📦 Req Stock</button>` : ''}
+                <button class="btn-icon" onclick="openEditProductModal('${item.id}')" title="Edit Product">✏️</button>
               </div>
             </div>
           </div>
-        \`;
+        `;
       }).join('');
     }
 
@@ -1397,6 +1342,83 @@ function getAppHtml() {
       }
     }
 
+    // Batch Add Models Wizard
+    function openBatchModelsModal() {
+      closeSidebar();
+      const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
+      const costGroup = document.getElementById('batchCostPriceGroup');
+      if (costGroup) costGroup.style.display = isOwner ? 'block' : 'none';
+      document.getElementById('batchModelsModal').classList.add('active');
+    }
+
+    function onBatchCategoryChange() {
+      const cat = document.getElementById('batchCategory').value;
+      const sizeGroup = document.getElementById('batchSizeGroup');
+      if (sizeGroup) sizeGroup.style.display = (cat === 'LED TV' || cat === 'Gaming & Displays') ? 'block' : 'none';
+    }
+
+    async function submitBatchModels() {
+      const category = document.getElementById('batchCategory').value;
+      const brand = document.getElementById('batchBrand').value.trim();
+      const size = document.getElementById('batchSize').value.trim();
+      const modelsRaw = document.getElementById('batchModelsInput').value.trim();
+      const qty = parseInt(document.getElementById('batchQuantity').value) || 5;
+      const sellPrice = parseFloat(document.getElementById('batchSellingPrice').value) || 0;
+      const costPrice = parseFloat(document.getElementById('batchCostPrice').value) || 0;
+
+      if (!brand || !modelsRaw) {
+        alert('Please enter a Brand and at least one Model Number.');
+        return;
+      }
+
+      const models = modelsRaw.split(/[\n,]+/).map(m => m.trim()).filter(m => m.length > 0);
+      if (models.length === 0) {
+        alert('Please specify valid model numbers');
+        return;
+      }
+
+      const items = models.map(m => {
+        const brandPrefix = brand.toUpperCase().substring(0, 3).padEnd(3, 'X');
+        const sz = (category === 'LED TV' && size) ? (' ' + size) : '';
+        return {
+          id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          name: `${brand}${sz} ${category} (${m})`,
+          brand,
+          model: m,
+          category,
+          size,
+          quantity: qty,
+          minStockThreshold: 2,
+          sellingPrice: sellPrice,
+          costPrice: costPrice,
+          location: 'Main Warehouse',
+          sku: 'ELEC-' + brandPrefix + '-' + m,
+          warrantyMonths: 24,
+          condition: 'NEW',
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+      });
+
+      try {
+        const res = await fetch('/api/items/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items })
+        });
+        const result = await res.json();
+        if (result.success) {
+          closeModal('batchModelsModal');
+          await loadData();
+          showToast(`Successfully added ${items.length} models to catalog!`);
+        } else {
+          alert('Failed to batch add models');
+        }
+      } catch (e) {
+        alert('Error adding models');
+      }
+    }
+
     // Login & Staff Switching Modal
     function openLoginModal() {
       const listArea = document.getElementById('staffListArea');
@@ -1559,6 +1581,241 @@ function getAppHtml() {
       }
     }
 
+    // Stock Requests UI & API
+    let currentRequestFilter = 'ALL';
+
+    function openRequestStockModal(preselectedItemId) {
+      const select = document.getElementById('reqStockItemSelect');
+      select.innerHTML = appState.items.map(it => `
+        <option value="${it.id}" ${it.id === preselectedItemId ? 'selected' : ''}>
+          ${it.brand} ${it.model || ''} - ${it.name} (${it.quantity} in stock)
+        </option>
+      `).join('');
+
+      if (appState.items.length === 0) {
+        select.innerHTML = '<option value="">No products in catalog</option>';
+      }
+
+      onReqItemSelectChange();
+      document.getElementById('reqStockQuantity').value = 5;
+      document.getElementById('reqStockNotes').value = '';
+      document.getElementById('requestStockModal').classList.add('active');
+    }
+
+    function onReqItemSelectChange() {
+      const select = document.getElementById('reqStockItemSelect');
+      const item = appState.items.find(it => it.id === select.value);
+      const lvl = document.getElementById('reqStockCurrentLevel');
+      if (item) {
+        lvl.textContent = item.quantity + ' units' + (item.quantity <= 0 ? ' (OUT OF STOCK)' : (item.quantity <= (item.minStockThreshold || 2) ? ' (LOW STOCK)' : ''));
+        lvl.style.color = item.quantity <= 0 ? 'var(--danger)' : (item.quantity <= (item.minStockThreshold || 2) ? 'var(--warning)' : 'var(--success)');
+      } else {
+        lvl.textContent = '0 units';
+        lvl.style.color = 'var(--text-muted)';
+      }
+    }
+
+    async function submitStockRequest() {
+      const select = document.getElementById('reqStockItemSelect');
+      const item = appState.items.find(it => it.id === select.value);
+      if (!item) {
+        alert('Please select a product');
+        return;
+      }
+
+      const qty = parseInt(document.getElementById('reqStockQuantity').value) || 1;
+      const urgency = document.getElementById('reqStockUrgency').value;
+      const notes = document.getElementById('reqStockNotes').value.trim();
+
+      const payload = {
+        id: 'req_' + Date.now(),
+        itemId: item.id,
+        itemSku: item.sku,
+        itemModel: item.model || '',
+        itemName: item.name,
+        category: item.category,
+        currentStock: item.quantity,
+        requestedQuantity: qty,
+        requestedBy: appState.currentStaff.displayName,
+        requestedByRole: appState.currentStaff.role,
+        requestedAt: Date.now(),
+        status: 'PENDING',
+        urgency: urgency,
+        notes: notes
+      };
+
+      try {
+        const res = await fetch('/api/stock-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.success) {
+          closeModal('requestStockModal');
+          await loadData();
+          showToast('Stock request for +' + qty + ' units submitted to Owner');
+        } else {
+          alert('Failed to submit request');
+        }
+      } catch (e) {
+        alert('Error submitting stock request');
+      }
+    }
+
+    function openStockRequestsModal() {
+      closeSidebar();
+      renderStockRequestsList(currentRequestFilter);
+      document.getElementById('stockRequestsListModal').classList.add('active');
+    }
+
+    function filterRequests(status) {
+      currentRequestFilter = status;
+      ['filterReqAll', 'filterReqPending', 'filterReqApproved', 'filterReqRejected'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.className = 'btn-sm btn-secondary';
+          el.style.background = '';
+          el.style.color = '';
+        }
+      });
+      const activeBtnId = status === 'ALL' ? 'filterReqAll' : (status === 'PENDING' ? 'filterReqPending' : (status === 'APPROVED' ? 'filterReqApproved' : 'filterReqRejected'));
+      const activeBtn = document.getElementById(activeBtnId);
+      if (activeBtn) {
+        activeBtn.style.background = 'var(--primary)';
+        activeBtn.style.color = 'white';
+      }
+      renderStockRequestsList(status);
+    }
+
+    function renderStockRequestsList(filter) {
+      const container = document.getElementById('stockRequestsListContent');
+      const reqs = appState.stock_requests || [];
+      const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
+
+      let filtered = reqs;
+      if (filter !== 'ALL') {
+        filtered = filtered.filter(r => r.status === filter);
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 32px;">No stock requests match this filter.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.slice().reverse().map(r => {
+        const isPending = r.status === 'PENDING';
+        const isApproved = r.status === 'APPROVED';
+        const isRejected = r.status === 'REJECTED';
+        const statusBg = isApproved ? 'var(--success-bg)' : (isRejected ? 'var(--danger-bg)' : '#fef3c7');
+        const statusColor = isApproved ? 'var(--success)' : (isRejected ? 'var(--danger)' : '#92400e');
+        const timeStr = new Date(r.requestedAt).toLocaleString();
+
+        return `
+          <div style="border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 11px; font-weight: 800; background: ${statusBg}; color: ${statusColor}; padding: 3px 8px; border-radius: 6px;">${r.status}</span>
+                  <span style="font-weight: 800; font-size: 15px;">${r.itemName}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  Model: <strong>${r.itemModel || 'Standard'}</strong> • SKU: ${r.itemSku} • Current Stock: ${r.currentStock} units
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 15px; font-weight: 800; color: #d97706;">+${r.requestedQuantity} Requested</div>
+                <div style="font-size: 11px; color: var(--text-muted);">${r.urgency || 'NORMAL'}</div>
+              </div>
+            </div>
+
+            <div style="font-size: 12px; background: var(--surface-variant); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span>Requested by: <strong>${r.requestedBy}</strong> (${r.requestedByRole})</span>
+                ${r.notes ? '<div style="margin-top: 2px; color: var(--text-muted);">Note: ' + r.notes + '</div>' : ''}
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted);">${timeStr}</span>
+            </div>
+
+            ${isOwner && isPending ? `
+              <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;">
+                <button class="btn-sm" style="background: var(--success); color: white; padding: 8px 16px; font-weight: 800;" onclick="approveStockRequest('${r.id}')">
+                  ✓ Approve & Add +${r.requestedQuantity} Units
+                </button>
+                <button class="btn-sm btn-danger" style="padding: 8px 14px;" onclick="rejectStockRequest('${r.id}')">
+                  ✕ Reject
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function approveStockRequest(reqId) {
+      try {
+        const res = await fetch('/api/stock-requests/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId: reqId,
+            reviewerName: appState.currentStaff.displayName
+          })
+        });
+        const result = await res.json();
+        if (result.success) {
+          await loadData();
+          renderStockRequestsList(currentRequestFilter);
+          showToast('Stock request approved and added to inventory!');
+        }
+      } catch (e) {
+        alert('Failed to approve request');
+      }
+    }
+
+    async function rejectStockRequest(reqId) {
+      try {
+        const res = await fetch('/api/stock-requests/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId: reqId,
+            reviewerName: appState.currentStaff.displayName
+          })
+        });
+        const result = await res.json();
+        if (result.success) {
+          await loadData();
+          renderStockRequestsList(currentRequestFilter);
+          showToast('Stock request rejected');
+        }
+      } catch (e) {
+        alert('Failed to reject request');
+      }
+    }
+
+    async function clearAllInventory() {
+      closeSidebar();
+      const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
+      if (!isOwner) {
+        alert('Only Universal Owner & Admin PARTH MEHTA can clear inventory.');
+        return;
+      }
+      if (!confirm('Are you sure you want to clear all dummy/existing products, requests, and logs so you can enter your own catalog? This will give you a fresh empty store.')) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/clear-all', { method: 'POST' });
+        const result = await res.json();
+        if (result.success) {
+          await loadData();
+          showToast('All inventory cleared. Ready for your own data!');
+        }
+      } catch (e) {
+        alert('Failed to clear inventory');
+      }
+    }
+
     // Team Management
     function openTeamModal() {
       const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
@@ -1570,22 +1827,22 @@ function getAppHtml() {
       const list = document.getElementById('teamMembersList');
       list.innerHTML = appState.staff.map(s => {
         const isParth = s.displayName.toUpperCase().includes('PARTH MEHTA');
-        return \`
-          <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; background: \${isParth ? 'var(--primary-container)' : 'var(--surface)'};">
+        return `
+          <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; background: ${isParth ? 'var(--primary-container)' : 'var(--surface)'};">
             <div>
-              <div style="font-weight: 700; font-size: 14px;">\${s.displayName} \${isParth ? '👑 Universal Admin' : ''}</div>
-              <div style="font-size: 12px; color: var(--text-muted);">Role: \${s.role} • Dept: \${s.department || 'Retail'}</div>
+              <div style="font-weight: 700; font-size: 14px;">${s.displayName} ${isParth ? '👑 Universal Admin' : ''}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Role: ${s.role} • Dept: ${s.department || 'Retail'}</div>
               <div style="font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px;">
-                LED Filter Perm: \${s.hasHierarchyPermission || isParth ? '✅ Granted' : '❌ Locked'}
+                LED Filter Perm: ${s.hasHierarchyPermission || isParth ? '✅ Granted' : '❌ Locked'}
               </div>
             </div>
-            \${!isParth ? \`
-              <button class="btn-sm btn-secondary" onclick="toggleStaffHierarchyPerm('\${s.id}')">
-                \${s.hasHierarchyPermission ? 'Revoke LED Perm' : 'Grant LED Perm'}
+            ${!isParth ? `
+              <button class="btn-sm btn-secondary" onclick="toggleStaffHierarchyPerm('${s.id}')">
+                ${s.hasHierarchyPermission ? 'Revoke LED Perm' : 'Grant LED Perm'}
               </button>
-            \` : '<span style="font-size: 11px; font-weight: 700; color: var(--primary);">Permanent Admin</span>'}
+            ` : '<span style="font-size: 11px; font-weight: 700; color: var(--primary);">Permanent Admin</span>'}
           </div>
-        \`;
+        `;
       }).join('');
 
       document.getElementById('teamModal').classList.add('active');
@@ -1649,6 +1906,43 @@ const server = http.createServer((req, res) => {
     const db = getDatabase();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(db));
+    return;
+  }
+
+  if (pathname === '/api/items/batch' && method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { items } = JSON.parse(body);
+        const db = getDatabase();
+        if (!db.items) db.items = [];
+        items.forEach(it => {
+          db.items.push(it);
+          if (it.quantity > 0) {
+            db.logs.push({
+              id: "log_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+              itemId: it.id,
+              itemName: it.name,
+              sku: it.sku,
+              actionType: "RESTOCK",
+              changeAmount: it.quantity,
+              newQuantity: it.quantity,
+              staffName: "PARTH MEHTA",
+              staffRole: "OWNER",
+              reason: "Batch Model Entry",
+              timestamp: Date.now()
+            });
+          }
+        });
+        saveDatabase(db);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, count: items.length }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
     return;
   }
 
@@ -1784,6 +2078,127 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+    return;
+  }
+
+  // Stock Requests Endpoints
+  if (pathname === '/api/stock-requests' && method === 'GET') {
+    const db = getDatabase();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(db.stock_requests || []));
+    return;
+  }
+
+  if (pathname === '/api/stock-requests' && method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const request = JSON.parse(body);
+        const db = getDatabase();
+        if (!db.stock_requests) db.stock_requests = [];
+        db.stock_requests.push(request);
+        saveDatabase(db);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, request }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/stock-requests/approve' && method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { requestId, reviewerName } = JSON.parse(body);
+        const db = getDatabase();
+        const reqItem = (db.stock_requests || []).find(r => r.id === requestId);
+        if (!reqItem) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Stock request not found' }));
+          return;
+        }
+
+        reqItem.status = 'APPROVED';
+        reqItem.reviewedBy = reviewerName || 'PARTH MEHTA';
+        reqItem.reviewedAt = Date.now();
+
+        // Increment physical stock
+        const item = (db.items || []).find(it => it.id === reqItem.itemId);
+        if (item) {
+          item.quantity += reqItem.requestedQuantity;
+          db.logs.push({
+            id: "log_" + Date.now(),
+            itemId: item.id,
+            itemName: item.name,
+            sku: item.sku,
+            actionType: "RESTOCK",
+            changeAmount: reqItem.requestedQuantity,
+            newQuantity: item.quantity,
+            staffName: reviewerName || 'PARTH MEHTA',
+            staffRole: 'OWNER',
+            reason: `Restock request approved for ${reqItem.requestedBy}`,
+            timestamp: Date.now()
+          });
+        }
+
+        saveDatabase(db);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, request: reqItem }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/stock-requests/reject' && method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { requestId, reviewerName } = JSON.parse(body);
+        const db = getDatabase();
+        const reqItem = (db.stock_requests || []).find(r => r.id === requestId);
+        if (!reqItem) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Stock request not found' }));
+          return;
+        }
+
+        reqItem.status = 'REJECTED';
+        reqItem.reviewedBy = reviewerName || 'PARTH MEHTA';
+        reqItem.reviewedAt = Date.now();
+
+        saveDatabase(db);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, request: reqItem }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/clear-all' && method === 'POST') {
+    try {
+      const db = getDatabase();
+      db.items = [];
+      db.logs = [];
+      db.stock_requests = [];
+      saveDatabase(db);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
     return;
   }
 

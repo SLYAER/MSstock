@@ -9,15 +9,17 @@ import androidx.room.RoomDatabase
     entities = [
         StaffEntity::class,
         ElectronicsItemEntity::class,
-        StockLogEntity::class
+        StockLogEntity::class,
+        StockRequestEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class MSStockDatabase : RoomDatabase() {
     abstract fun staffDao(): StaffDao
     abstract fun electronicsItemDao(): ElectronicsItemDao
     abstract fun stockLogDao(): StockLogDao
+    abstract fun stockRequestDao(): StockRequestDao
 
     companion object {
         @Volatile

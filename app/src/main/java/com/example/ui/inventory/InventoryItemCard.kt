@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Laptop
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material.icons.filled.Place
@@ -30,6 +32,8 @@ import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -64,11 +68,15 @@ import java.util.Locale
 @Composable
 fun InventoryItemCard(
     item: ElectronicsItem,
+    isOwner: Boolean = false,
+    canEdit: Boolean = true,
+    canDelete: Boolean = true,
     onEditClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
     onAdjustStockClicked: () -> Unit,
     onQuickIncrement: () -> Unit,
     onQuickDecrement: () -> Unit,
+    onRequestStockClicked: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US)
@@ -205,7 +213,7 @@ fun InventoryItemCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Pricing & Valuation breakdown
+            // Pricing & Valuation breakdown (DP PRICE IS OWNER ONLY)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
@@ -220,7 +228,7 @@ fun InventoryItemCard(
                 ) {
                     Column {
                         Text(
-                            text = "Selling Price",
+                            text = "Selling Price (Retail)",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -232,33 +240,60 @@ fun InventoryItemCard(
                         )
                     }
 
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Cost",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = currencyFormatter.format(item.costPrice),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    // STRICT OWNER ONLY: DP Price (Dealer Price / Cost) & Gross Margin
+                    if (isOwner) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "DP Price",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = "Owner Only",
+                                    modifier = Modifier.size(10.dp),
+                                    tint = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                            Text(
+                                text = currencyFormatter.format(item.costPrice),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
 
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "Gross Margin",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        val margin = item.profitMarginPercent
-                        Text(
-                            text = String.format(Locale.US, "%.1f%%", margin),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (margin >= 25.0) StockInStock else if (margin >= 10.0) StockLowStock else StockOutOfStock
-                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "Margin",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            val margin = item.profitMarginPercent
+                            Text(
+                                text = String.format(Locale.US, "%.1f%%", margin),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (margin >= 25.0) StockInStock else if (margin >= 10.0) StockLowStock else StockOutOfStock
+                            )
+                        }
+                    } else {
+                        // For Sales Staff: show model stock quick indicator
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (item.quantity <= item.minStockThreshold) StockLowStockBg else StockInStockBg
+                        ) {
+                            Text(
+                                text = if (item.quantity <= 0) "Restock Required" else "${item.quantity} in Stock",
+                                color = if (item.quantity <= 0) StockOutOfStock else StockInStock,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -317,30 +352,51 @@ fun InventoryItemCard(
                     }
                 }
 
-                // Edit and Delete
+                // Actions: Request Stock for sales / low stock & Edit/Delete for authorized roles
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onEditClicked,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit item",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
+                    if (onRequestStockClicked != null && (item.isLowStock || item.isOutOfStock || !isOwner)) {
+                        OutlinedButton(
+                            onClick = onRequestStockClicked,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Request Stock", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
 
-                    IconButton(
-                        onClick = onDeleteClicked,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete item",
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                            modifier = Modifier.size(18.dp)
-                        )
+                    if (canEdit) {
+                        IconButton(
+                            onClick = onEditClicked,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit item",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    if (canDelete) {
+                        IconButton(
+                            onClick = onDeleteClicked,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete item",
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }

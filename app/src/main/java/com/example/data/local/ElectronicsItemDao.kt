@@ -33,6 +33,9 @@ interface ElectronicsItemDao {
     @Query("DELETE FROM electronics_items WHERE id = :id")
     suspend fun deleteItem(id: String)
 
+    @Query("DELETE FROM electronics_items")
+    suspend fun deleteAllItems()
+
     @Query("SELECT COUNT(*) FROM electronics_items")
     suspend fun getItemCount(): Int
 }

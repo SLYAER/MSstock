@@ -11,7 +11,7 @@ data class ElectronicsItem(
     val model: String = "",
     val quantity: Int = 0,
     val minStockThreshold: Int = 5,
-    val costPrice: Double = 0.0,
+    val costPrice: Double = 0.0, // DP Price (Dealer Price / Cost to Store)
     val sellingPrice: Double = 0.0,
     val condition: String = "NEW",
     val location: String = "",
@@ -20,6 +20,9 @@ data class ElectronicsItem(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
+    val dpPrice: Double
+        get() = costPrice
+
     val isLowStock: Boolean
         get() = quantity in 1..minStockThreshold
 

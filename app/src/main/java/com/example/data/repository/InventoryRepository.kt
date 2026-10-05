@@ -5,10 +5,12 @@ import com.example.data.local.ElectronicsItemEntity
 import com.example.data.local.MSStockDatabase
 import com.example.data.local.StaffEntity
 import com.example.data.local.StockLogEntity
+import com.example.data.local.StockRequestEntity
 import com.example.data.model.ElectronicsItem
 import com.example.data.model.StaffMember
 import com.example.data.model.StaffRole
 import com.example.data.model.StockLog
+import com.example.data.model.StockRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -23,6 +25,7 @@ class InventoryRepository(
     private val itemDao = database.electronicsItemDao()
     private val staffDao = database.staffDao()
     private val stockLogDao = database.stockLogDao()
+    private val stockRequestDao = database.stockRequestDao()
 
     fun observeItems(userId: String = "store_main"): Flow<List<ElectronicsItem>> {
         return itemDao.getAllItems().map { list ->
@@ -38,6 +41,18 @@ class InventoryRepository(
 
     fun observeStaffMembers(userId: String = "store_main"): Flow<List<StaffMember>> {
         return staffDao.getAllStaff().map { list ->
+            list.map { it.toModel() }
+        }
+    }
+
+    fun observeStockRequests(): Flow<List<StockRequest>> {
+        return stockRequestDao.getAllRequests().map { list ->
+            list.map { it.toModel() }
+        }
+    }
+
+    fun observePendingStockRequests(): Flow<List<StockRequest>> {
+        return stockRequestDao.getPendingRequests().map { list ->
             list.map { it.toModel() }
         }
     }
@@ -79,6 +94,37 @@ class InventoryRepository(
             }
 
             Result.success(item.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createItemsBatch(
+        items: List<ElectronicsItem>,
+        staffName: String,
+        staffRole: String
+    ): Result<Int> = withContext(Dispatchers.IO) {
+        try {
+            val entities = items.map { ElectronicsItemEntity.fromModel(it) }
+            itemDao.insertAll(entities)
+
+            val logs = items.filter { it.quantity > 0 }.map { item ->
+                StockLogEntity(
+                    id = UUID.randomUUID().toString(),
+                    itemId = item.id,
+                    itemName = item.name,
+                    changeAmount = item.quantity,
+                    previousQuantity = 0,
+                    newQuantity = item.quantity,
+                    reason = "Batch Model Entry",
+                    staffName = staffName,
+                    staffRole = staffRole,
+                    createdAt = System.currentTimeMillis()
+                )
+            }
+            logs.forEach { stockLogDao.insertLog(it) }
+
+            Result.success(items.size)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -540,4 +586,109 @@ class InventoryRepository(
                 Result.failure(e)
             }
         }
+
+    suspend fun clearAllInventory(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            itemDao.deleteAllItems()
+            stockLogDao.deleteAllLogs()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createStockRequest(request: StockRequest): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val entity = StockRequestEntity.fromModel(request)
+            stockRequestDao.insertRequest(entity)
+            Result.success(request.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun approveStockRequest(
+        requestId: String,
+        addQuantityToStock: Boolean = true,
+        reviewerName: String = "PARTH MEHTA",
+        reviewerRole: String = "OWNER",
+        reviewNote: String = "Approved by Owner"
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val request = stockRequestDao.getRequestById(requestId)
+                ?: return@withContext Result.failure(IllegalStateException("Request not found"))
+
+            if (addQuantityToStock && request.itemId.isNotBlank()) {
+                val item = itemDao.getItemById(request.itemId)
+                if (item != null) {
+                    val currentQty = item.quantity
+                    val newQty = currentQty + request.requestedQuantity
+                    itemDao.updateQuantity(item.id, newQty, System.currentTimeMillis())
+
+                    // Log audit trail for restock
+                    val log = StockLogEntity(
+                        id = UUID.randomUUID().toString(),
+                        itemId = item.id,
+                        itemName = item.name,
+                        changeAmount = request.requestedQuantity,
+                        previousQuantity = currentQty,
+                        newQuantity = newQty,
+                        reason = "Stock Request #${request.id.take(6).uppercase()} Fulfilled (+${request.requestedQuantity}) - Req by ${request.requestedByStaffName}",
+                        staffName = reviewerName,
+                        staffRole = reviewerRole,
+                        createdAt = System.currentTimeMillis()
+                    )
+                    stockLogDao.insertLog(log)
+                }
+            }
+
+            stockRequestDao.updateStatus(
+                id = requestId,
+                status = "APPROVED",
+                reviewNote = reviewNote,
+                reviewedBy = reviewerName,
+                updatedAt = System.currentTimeMillis()
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun rejectStockRequest(
+        requestId: String,
+        reviewerName: String = "PARTH MEHTA",
+        reviewNote: String = "Request declined"
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            stockRequestDao.updateStatus(
+                id = requestId,
+                status = "REJECTED",
+                reviewNote = reviewNote,
+                reviewedBy = reviewerName,
+                updatedAt = System.currentTimeMillis()
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteStockRequest(requestId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            stockRequestDao.deleteRequest(requestId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun clearAllStockRequests(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            stockRequestDao.deleteAllRequests()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

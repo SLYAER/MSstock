@@ -31,11 +31,14 @@ data class StaffMember(
     val isPendingApproval: Boolean
         get() = pin.isBlank()
 
+    val isOwner: Boolean
+        get() = staffRole == StaffRole.OWNER
+
     val canAccessHierarchy: Boolean
         get() = staffRole == StaffRole.OWNER || hasHierarchyPermission
 
     val canViewCostsAndMargins: Boolean
-        get() = staffRole == StaffRole.OWNER || staffRole == StaffRole.MANAGER
+        get() = staffRole == StaffRole.OWNER
 
     val canManageStaff: Boolean
         get() = staffRole == StaffRole.OWNER

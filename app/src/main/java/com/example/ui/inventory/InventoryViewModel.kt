@@ -101,6 +101,27 @@ class InventoryViewModel(
                 initialValue = UiState.Loading
             )
 
+    val stockRequestsState: StateFlow<UiState<List<com.example.data.model.StockRequest>>> =
+        repository.observeStockRequests()
+            .map<List<com.example.data.model.StockRequest>, UiState<List<com.example.data.model.StockRequest>>> { UiState.Success(it) }
+            .catch { error ->
+                Log.w(TAG, "Error observing stock requests", error)
+                emit(UiState.Error(error.message ?: "Failed to load stock requests"))
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000L),
+                initialValue = UiState.Loading
+            )
+
+    val pendingRequestsCount: StateFlow<Int> = stockRequestsState.map { state ->
+        if (state is UiState.Success) state.data.count { it.isPending } else 0
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000L),
+        initialValue = 0
+    )
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
@@ -367,6 +388,25 @@ class InventoryViewModel(
         }
     }
 
+    fun saveItemsBatch(items: List<ElectronicsItem>, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            _isOperationRunning.value = true
+            val staff = _currentStaff.value
+            val staffName = staff?.displayName ?: "Owner"
+            val staffRole = staff?.role ?: "OWNER"
+
+            val result = repository.createItemsBatch(items, staffName, staffRole)
+            _isOperationRunning.value = false
+            if (result.isSuccess) {
+                val count = result.getOrNull() ?: items.size
+                _userMessage.value = "Successfully registered $count models in inventory"
+                onComplete()
+            } else {
+                _userMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to add models batch"
+            }
+        }
+    }
+
     fun quickAdjustStock(item: ElectronicsItem, delta: Int, reason: String) {
         viewModelScope.launch {
             _isOperationRunning.value = true
@@ -447,6 +487,112 @@ class InventoryViewModel(
                 _userMessage.value = "Loaded $count popular electronics items into MSstock catalog!"
             } else {
                 _userMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to load sample data"
+            }
+        }
+    }
+
+    fun requestStock(
+        item: ElectronicsItem,
+        requestedQuantity: Int,
+        urgency: String,
+        note: String
+    ) {
+        viewModelScope.launch {
+            _isOperationRunning.value = true
+            val staff = _currentStaff.value
+            val staffId = staff?.id ?: "sales_staff"
+            val staffName = staff?.displayName ?: "Sales Associate"
+            val staffRole = staff?.role ?: "SALES"
+
+            val request = com.example.data.model.StockRequest(
+                itemId = item.id,
+                itemSku = item.sku,
+                itemModel = item.model,
+                itemName = item.name,
+                itemBrand = item.brand,
+                itemCategory = item.category,
+                currentStock = item.quantity,
+                requestedQuantity = requestedQuantity,
+                urgency = urgency,
+                note = note,
+                requestedByStaffId = staffId,
+                requestedByStaffName = staffName,
+                requestedByStaffRole = staffRole,
+                status = "PENDING"
+            )
+
+            val result = repository.createStockRequest(request)
+            _isOperationRunning.value = false
+            if (result.isSuccess) {
+                _userMessage.value = "Restock request for $requestedQuantity x ${item.name} sent to Owner!"
+            } else {
+                _userMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to submit restock request"
+            }
+        }
+    }
+
+    fun approveStockRequest(
+        requestId: String,
+        addStock: Boolean = true,
+        reviewNote: String = "Approved by Owner"
+    ) {
+        viewModelScope.launch {
+            _isOperationRunning.value = true
+            val staff = _currentStaff.value
+            val reviewerName = staff?.displayName ?: "PARTH MEHTA"
+            val reviewerRole = staff?.role ?: "OWNER"
+
+            val result = repository.approveStockRequest(
+                requestId = requestId,
+                addQuantityToStock = addStock,
+                reviewerName = reviewerName,
+                reviewerRole = reviewerRole,
+                reviewNote = reviewNote
+            )
+            _isOperationRunning.value = false
+            if (result.isSuccess) {
+                _userMessage.value = "Stock request approved and units added to live inventory!"
+            } else {
+                _userMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to approve request"
+            }
+        }
+    }
+
+    fun rejectStockRequest(requestId: String, reason: String) {
+        viewModelScope.launch {
+            _isOperationRunning.value = true
+            val staff = _currentStaff.value
+            val reviewerName = staff?.displayName ?: "PARTH MEHTA"
+
+            val result = repository.rejectStockRequest(
+                requestId = requestId,
+                reviewerName = reviewerName,
+                reviewNote = reason
+            )
+            _isOperationRunning.value = false
+            if (result.isSuccess) {
+                _userMessage.value = "Stock request declined"
+            } else {
+                _userMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to reject request"
+            }
+        }
+    }
+
+    fun deleteStockRequest(requestId: String) {
+        viewModelScope.launch {
+            repository.deleteStockRequest(requestId)
+        }
+    }
+
+    fun clearAllInventory() {
+        viewModelScope.launch {
+            _isOperationRunning.value = true
+            val result = repository.clearAllInventory()
+            _isOperationRunning.value = false
+            if (result.isSuccess) {
+                _userMessage.value = "All inventory items cleared! You can now add your own store catalog."
+            } else {
+                _userMessage.value = result.exceptionOrNull()?.localizedMessage ?: "Failed to clear inventory"
             }
         }
     }

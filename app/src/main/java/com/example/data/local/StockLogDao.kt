@@ -19,4 +19,7 @@ interface StockLogDao {
 
     @Query("DELETE FROM stock_logs")
     suspend fun clearAllLogs()
+
+    @Query("DELETE FROM stock_logs")
+    suspend fun deleteAllLogs()
 }

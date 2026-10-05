@@ -36,12 +36,16 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Dataset
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Group
@@ -54,6 +58,7 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NorthWest
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
@@ -142,6 +147,8 @@ fun InventoryScreen(
     val rawItemsState by viewModel.rawItemsState.collectAsStateWithLifecycle()
     val stockLogsState by viewModel.stockLogsState.collectAsStateWithLifecycle()
     val staffListState by viewModel.staffListState.collectAsStateWithLifecycle()
+    val stockRequestsState by viewModel.stockRequestsState.collectAsStateWithLifecycle()
+    val pendingRequestsCount by viewModel.pendingRequestsCount.collectAsStateWithLifecycle()
     val filteredItems by viewModel.filteredItems.collectAsStateWithLifecycle()
     val stats by viewModel.stats.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -152,11 +159,15 @@ fun InventoryScreen(
     val isOperationRunning by viewModel.isOperationRunning.collectAsStateWithLifecycle()
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showBatchModelDialog by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<ElectronicsItem?>(null) }
     var itemToAdjust by remember { mutableStateOf<ElectronicsItem?>(null) }
     var itemToSell by remember { mutableStateOf<ElectronicsItem?>(null) }
     var itemToDelete by remember { mutableStateOf<ElectronicsItem?>(null) }
     var itemForDetail by remember { mutableStateOf<ElectronicsItem?>(null) }
+    var itemToRequestStock by remember { mutableStateOf<ElectronicsItem?>(null) }
+    var showStockRequestsDialog by remember { mutableStateOf(false) }
+    var showClearInventoryConfirm by remember { mutableStateOf(false) }
     var showLogsSheet by remember { mutableStateOf(false) }
     var showStaffDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
@@ -294,6 +305,15 @@ fun InventoryScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+                // Section: INVENTORY & MODELS
+                Text(
+                    text = "INVENTORY & PRODUCTS",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                )
+
                 // Sidebar Option 1: Stock Catalog / Inventory
                 NavigationDrawerItem(
                     label = { Text("Stock & Inventory") },
@@ -324,7 +344,138 @@ fun InventoryScreen(
                         .testTag("sidebar_nav_stock")
                 )
 
-                // Sidebar Option 2: Manage Employees (Universal Owner & Admin)
+                // Sidebar Option 2: Add Product & Model
+                NavigationDrawerItem(
+                    label = {
+                        Column {
+                            Text("Add Product / Model", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Register individual product with SKU",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontSize = 10.sp
+                            )
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        itemToEdit = null
+                        showAddDialog = true
+                    },
+                    icon = { Icon(Icons.Default.AddCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_add_stock")
+                )
+
+                // Sidebar Option 3: Add Multiple Models (Batch)
+                NavigationDrawerItem(
+                    label = {
+                        Column {
+                            Text("Add Multiple Models (Batch)", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Fast-add TV, Mobile & PC models",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontSize = 10.sp
+                            )
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showBatchModelDialog = true
+                    },
+                    icon = { Icon(Icons.Default.ElectricBolt, contentDescription = null, tint = Color(0xFFD97706)) },
+                    badge = {
+                        Surface(
+                            color = Color(0xFFFEF3C7),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "Quick",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF92400E)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_batch_models")
+                )
+
+                // Sidebar Option 4: Guided LED TV Explorer
+                NavigationDrawerItem(
+                    label = { Text("LED TV Guided Filter") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        if (canAccessHierarchy) {
+                            hierarchyInitialCategory = "LED TV"
+                            hierarchyInitialSize = "55\""
+                            showHierarchyDialog = true
+                        } else {
+                            showPermissionAlert = true
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Tv, contentDescription = null) },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_led_explorer")
+                )
+
+                // Sidebar Option 5: Stock Requests (Sales Requisitions & Approvals)
+                NavigationDrawerItem(
+                    label = {
+                        Column {
+                            Text("Stock Requests")
+                            Text(
+                                if (canViewCosts) "Fulfill & approve restocks" else "Request low stock models",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontSize = 10.sp
+                            )
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showStockRequestsDialog = true
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.NotificationsActive,
+                            contentDescription = null,
+                            tint = if (pendingRequestsCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    badge = {
+                        if (pendingRequestsCount > 0) {
+                            Badge(containerColor = MaterialTheme.colorScheme.error) {
+                                Text("$pendingRequestsCount")
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_stock_requests")
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Section: MANAGEMENT & AUDIT
+                Text(
+                    text = "MANAGEMENT & AUDIT",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                )
+
+                // Sidebar Option 6: Manage Employees (Universal Owner & Admin)
                 NavigationDrawerItem(
                     label = {
                         Column {
@@ -372,27 +523,7 @@ fun InventoryScreen(
                         .testTag("sidebar_nav_employees")
                 )
 
-                // Sidebar Option 3: Guided LED TV Explorer
-                NavigationDrawerItem(
-                    label = { Text("LED TV Guided Filter") },
-                    selected = false,
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        if (canAccessHierarchy) {
-                            hierarchyInitialCategory = "LED TV"
-                            hierarchyInitialSize = "55\""
-                            showHierarchyDialog = true
-                        } else {
-                            showPermissionAlert = true
-                        }
-                    },
-                    icon = { Icon(Icons.Default.Tv, contentDescription = null) },
-                    modifier = Modifier
-                        .padding(NavigationDrawerItemDefaults.ItemPadding)
-                        .testTag("sidebar_nav_led_explorer")
-                )
-
-                // Sidebar Option 4: Stock Logs & Audit Trail
+                // Sidebar Option 7: Stock Logs & Audit Trail
                 NavigationDrawerItem(
                     label = { Text("Stock Logs & Audit Trail") },
                     selected = false,
@@ -406,43 +537,37 @@ fun InventoryScreen(
                         .testTag("sidebar_nav_audit_logs")
                 )
 
-                // Sidebar Option 5: Register New Stock
-                if (canEditItemDetails) {
-                    NavigationDrawerItem(
-                        label = { Text("Register New Stock") },
-                        selected = false,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            itemToEdit = null
-                            showAddDialog = true
-                        },
-                        icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                        modifier = Modifier
-                            .padding(NavigationDrawerItemDefaults.ItemPadding)
-                            .testTag("sidebar_nav_add_stock")
-                    )
-                }
-
-                // Sidebar Option 6: Seed Electronic Catalog
+                // Sidebar Option 8: Clear All Inventory / Wipe Dummy Data (Owner only)
                 if (canViewCosts) {
                     NavigationDrawerItem(
-                        label = { Text("Seed Sample Catalog") },
+                        label = {
+                            Text(
+                                "Clear All Inventory",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        },
                         selected = false,
                         onClick = {
                             scope.launch { drawerState.close() }
-                            viewModel.seedSampleCatalog()
+                            showClearInventoryConfirm = true
                         },
-                        icon = { Icon(Icons.Default.Dataset, contentDescription = null) },
+                        icon = {
+                            Icon(
+                                Icons.Default.DeleteSweep,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
                         modifier = Modifier
                             .padding(NavigationDrawerItemDefaults.ItemPadding)
-                            .testTag("sidebar_nav_seed_catalog")
+                            .testTag("sidebar_nav_clear_inventory")
                     )
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // Sidebar Option 7: Switch Staff / Sign Out
+                // Sidebar Option 9: Switch Staff / Sign Out
                 NavigationDrawerItem(
                     label = { Text("Switch Staff / Sign Out") },
                     selected = false,
@@ -543,6 +668,29 @@ fun InventoryScreen(
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
+                        }
+                    }
+
+                    // Stock Requests button with badge
+                    IconButton(onClick = { showStockRequestsDialog = true }) {
+                        if (pendingRequestsCount > 0) {
+                            BadgedBox(badge = {
+                                Badge(containerColor = MaterialTheme.colorScheme.error) {
+                                    Text("$pendingRequestsCount")
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.NotificationsActive,
+                                    contentDescription = "Stock Requests",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = "Stock Requests",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
 
@@ -722,6 +870,13 @@ fun InventoryScreen(
                         item {
                             EmptyInventoryPlaceholder(
                                 isCatalogEmpty = (rawItemsState as UiState.Success<List<ElectronicsItem>>).data.isEmpty(),
+                                onAddProduct = {
+                                    itemToEdit = null
+                                    showAddDialog = true
+                                },
+                                onAddBatch = {
+                                    showBatchModelDialog = true
+                                },
                                 onSeedSample = { viewModel.seedSampleCatalog() }
                             )
                         }
@@ -739,7 +894,8 @@ fun InventoryScreen(
                                     itemToEdit = item
                                     showAddDialog = true
                                 },
-                                onDelete = { itemToDelete = item }
+                                onDelete = { itemToDelete = item },
+                                onRequestStock = { itemToRequestStock = item }
                             )
                         }
                     }
@@ -767,6 +923,11 @@ fun InventoryScreen(
                 itemForDetail = null
                 itemToEdit = item
                 showAddDialog = true
+            },
+            onRequestStock = {
+                val target = itemForDetail
+                itemForDetail = null
+                itemToRequestStock = target
             }
         )
     }
@@ -871,6 +1032,7 @@ fun InventoryScreen(
     if (showAddDialog) {
         AddEditItemDialog(
             itemToEdit = itemToEdit,
+            isOwner = canViewCosts,
             onDismiss = {
                 showAddDialog = false
                 itemToEdit = null
@@ -879,6 +1041,84 @@ fun InventoryScreen(
                 viewModel.saveItem(item, isUpdate) {
                     showAddDialog = false
                     itemToEdit = null
+                }
+            }
+        )
+    }
+
+    // Batch Add Multiple Models Dialog
+    if (showBatchModelDialog) {
+        BatchAddModelDialog(
+            isOwner = canViewCosts,
+            onDismiss = { showBatchModelDialog = false },
+            onSaveBatch = { items ->
+                viewModel.saveItemsBatch(items) {
+                    showBatchModelDialog = false
+                }
+            }
+        )
+    }
+
+    // Request Stock Dialog (Sales staff & low-stock model restock requests)
+    itemToRequestStock?.let { item ->
+        RequestStockDialog(
+            item = item,
+            currentStaff = staff,
+            onDismiss = { itemToRequestStock = null },
+            onSubmitRequest = { quantity, urgency, note ->
+                viewModel.requestStock(item, quantity, urgency, note)
+                itemToRequestStock = null
+            }
+        )
+    }
+
+    // Stock Requests Management Dialog (Owner approvals & sales tracking)
+    if (showStockRequestsDialog) {
+        val requests = (stockRequestsState as? UiState.Success<List<com.example.data.model.StockRequest>>)?.data ?: emptyList()
+        StockRequestsDialog(
+            requests = requests,
+            currentStaff = staff,
+            onDismiss = { showStockRequestsDialog = false },
+            onApprove = { requestId, addStock, note ->
+                viewModel.approveStockRequest(requestId, addStock, note)
+            },
+            onReject = { requestId, reason ->
+                viewModel.rejectStockRequest(requestId, reason)
+            },
+            onDelete = { requestId ->
+                viewModel.deleteStockRequest(requestId)
+            }
+        )
+    }
+
+    // Clear All Inventory Confirmation Dialog (Owner tool to start with clean store catalog)
+    if (showClearInventoryConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearInventoryConfirm = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Clear All Inventory?")
+                }
+            },
+            text = {
+                Text("This will remove all dummy/demo products and stock logs so you can enter your own store inventory.\n\nPARTH MEHTA universal owner account and staff credentials will remain active.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showClearInventoryConfirm = false
+                        viewModel.clearAllInventory()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Clear All Data")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearInventoryConfirm = false }) {
+                    Text("Cancel")
                 }
             }
         )
@@ -1778,7 +2018,8 @@ private fun ElectronicsItemCard(
     onSell: () -> Unit,
     onAdjust: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onRequestStock: (() -> Unit)? = null
 ) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
 
@@ -1891,7 +2132,7 @@ private fun ElectronicsItemCard(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Pricing Row
+            // Pricing Row (DP PRICE STRICTLY RESTRICTED TO OWNER / CAN_VIEW_COSTS)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1899,7 +2140,7 @@ private fun ElectronicsItemCard(
             ) {
                 Column {
                     Text(
-                        text = "Selling Price",
+                        text = "Selling Price (Retail)",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1913,11 +2154,21 @@ private fun ElectronicsItemCard(
 
                 if (canViewCosts) {
                     Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "Cost: ${currencyFormat.format(item.costPrice)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "DP Price: ${currencyFormat.format(item.costPrice)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Owner DP Price",
+                                modifier = Modifier.size(11.dp),
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
                         Text(
                             text = "Margin: ${String.format(Locale.US, "%.1f%%", item.profitMarginPercent)}",
                             style = MaterialTheme.typography.labelSmall,
@@ -1933,20 +2184,20 @@ private fun ElectronicsItemCard(
             // Actions Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Quick Sell Button (Available to Sales, Managers, Owners)
+                // Quick Sell Button
                 Button(
                     onClick = onSell,
                     enabled = item.quantity > 0,
-                    modifier = Modifier.weight(1.2f),
+                    modifier = Modifier.weight(1.1f),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                 ) {
-                    Icon(imageVector = Icons.Default.PointOfSale, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Sell", fontSize = 13.sp)
+                    Icon(imageVector = Icons.Default.PointOfSale, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Sell", fontSize = 12.sp)
                 }
 
                 // Adjust Stock Button
@@ -1955,29 +2206,47 @@ private fun ElectronicsItemCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(imageVector = Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(15.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Stock", fontSize = 13.sp)
+                    Text("Stock", fontSize = 12.sp)
+                }
+
+                // Request Stock Button (for Low Stock or Sales staff)
+                if (onRequestStock != null && (item.isLowStock || item.isOutOfStock || !canViewCosts)) {
+                    OutlinedButton(
+                        onClick = onRequestStock,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1.2f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddShoppingCart,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Request", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
 
                 // Info / Specs Button
-                IconButton(onClick = onViewDetail) {
+                IconButton(onClick = onViewDetail, modifier = Modifier.size(34.dp)) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "View Specifications & Stock Details",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
                 if (canEdit) {
-                    IconButton(onClick = onEdit) {
-                        Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Item", tint = MaterialTheme.colorScheme.primary)
+                    IconButton(onClick = onEdit, modifier = Modifier.size(34.dp)) {
+                        Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Item", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     }
                 }
 
                 if (canDelete) {
-                    IconButton(onClick = onDelete) {
-                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Item", tint = MaterialTheme.colorScheme.error)
+                    IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
+                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Item", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -1993,7 +2262,8 @@ fun ProductDetailDialog(
     onDismiss: () -> Unit,
     onSell: () -> Unit,
     onAdjust: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    onRequestStock: (() -> Unit)? = null
 ) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
     val (stockBg, stockTextColor, stockText) = when {
@@ -2106,7 +2376,7 @@ fun ProductDetailDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Pricing Card
+                // Pricing Card (DP Price is Owner Only)
                 Card(
                     shape = RoundedCornerShape(10.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
@@ -2133,11 +2403,21 @@ fun ProductDetailDialog(
                             }
                             if (canViewCosts) {
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = "Wholesale: ${currencyFormat.format(item.costPrice)}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "DP Price: ${currencyFormat.format(item.costPrice)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.Lock,
+                                            contentDescription = "Owner DP Price",
+                                            modifier = Modifier.size(11.dp),
+                                            tint = MaterialTheme.colorScheme.secondary
+                                        )
+                                    }
                                     val margin = item.profitMarginPercent
                                     Text(
                                         text = "Margin: ${String.format(Locale.US, "%.1f%%", margin)}",
@@ -2174,7 +2454,17 @@ fun ProductDetailDialog(
             }
         },
         confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (onRequestStock != null) {
+                    OutlinedButton(
+                        onClick = onRequestStock,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Request Stock")
+                    }
+                }
                 OutlinedButton(
                     onClick = onAdjust,
                     shape = RoundedCornerShape(8.dp)
@@ -2465,12 +2755,14 @@ fun ReceiptDialog(
 @Composable
 private fun EmptyInventoryPlaceholder(
     isCatalogEmpty: Boolean,
+    onAddProduct: () -> Unit,
+    onAddBatch: () -> Unit,
     onSeedSample: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(32.dp),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -2501,25 +2793,62 @@ private fun EmptyInventoryPlaceholder(
 
         Text(
             text = if (isCatalogEmpty) {
-                "Your store inventory is currently empty. Tap below to preload sample electronics (Haier, Onida, Sony, Samsung, LG LED TVs, iPhones, Headphones) or add your own items."
+                "Your store catalog is ready for your own inventory! Add individual items with model numbers, or use the quick batch wizard to register models."
             } else {
-                "Try searching by model number (e.g. 55U6G, 43A6H) or tap 'Guided LED Filter' above."
+                "Try searching by model number (e.g. 55U6G, 43UIF) or tap 'Guided LED Filter' above."
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
 
-        if (isCatalogEmpty) {
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Column(
+            modifier = Modifier.fillMaxWidth(0.9f),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Button 1: Add New Product & Model
             Button(
-                onClick = onSeedSample,
+                onClick = onAddProduct,
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.testTag("seed_sample_button")
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("empty_add_product_button")
             ) {
-                Icon(Icons.Default.Dataset, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.AddCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Preload Sample Electronics Catalog")
+                Text("➕ Add New Product / Model")
+            }
+
+            // Button 2: Quick Add Multiple Models (Batch)
+            Button(
+                onClick = onAddBatch,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("empty_add_batch_button")
+            ) {
+                Icon(Icons.Default.ElectricBolt, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("⚡ Quick Add Multiple Models (Batch)")
+            }
+
+            // Button 3: Optional Sample Catalog
+            if (isCatalogEmpty) {
+                OutlinedButton(
+                    onClick = onSeedSample,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("seed_sample_button")
+                ) {
+                    Icon(Icons.Default.Dataset, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Preload Sample Catalog (Optional)")
+                }
             }
         }
     }

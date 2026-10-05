@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -81,6 +82,7 @@ val DEVICE_CONDITIONS = listOf(
 @Composable
 fun AddEditItemDialog(
     itemToEdit: ElectronicsItem? = null,
+    isOwner: Boolean = false,
     onDismiss: () -> Unit,
     onSave: (ElectronicsItem, Boolean) -> Unit
 ) {
@@ -94,7 +96,7 @@ fun AddEditItemDialog(
     var model by remember { mutableStateOf(itemToEdit?.model ?: "") }
     var quantityText by remember { mutableStateOf((itemToEdit?.quantity ?: 1).toString()) }
     var thresholdText by remember { mutableStateOf((itemToEdit?.minStockThreshold ?: 3).toString()) }
-    var costPriceText by remember { mutableStateOf(if (isEdit) itemToEdit?.costPrice?.toString() ?: "" else "") }
+    var costPriceText by remember { mutableStateOf(if (isEdit && isOwner) itemToEdit?.costPrice?.toString() ?: "" else if (isOwner) "" else "0") }
     var sellingPriceText by remember { mutableStateOf(if (isEdit) itemToEdit?.sellingPrice?.toString() ?: "" else "") }
     var condition by remember { mutableStateOf(itemToEdit?.condition ?: "NEW") }
     var location by remember { mutableStateOf(itemToEdit?.location ?: "") }
@@ -281,6 +283,49 @@ fun AddEditItemDialog(
                     Column {
                         Text("4. MODEL NUMBER", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(4.dp))
+
+                        // Quick Model Suggestion Pills
+                        val suggestedModels = when (category to brand.lowercase()) {
+                            "LED TV" to "haier" -> listOf("55U6G", "43U6G", "65U6G", "32U6G", "55K6600")
+                            "LED TV" to "onida" -> listOf("55UIF", "43UIF", "50UIF", "32HIF")
+                            "LED TV" to "sony" -> listOf("BRAVIA-55X90L", "BRAVIA-65X90L", "KD-55X74L", "BRAVIA-55A80L")
+                            "LED TV" to "samsung" -> listOf("UA55CU7700", "QA55QN90C", "UA43CU7700", "QA65QN90C")
+                            "LED TV" to "lg" -> listOf("OLED55C3", "55UQ7500", "65UQ8000", "OLED65G3")
+                            "LED TV" to "tcl" -> listOf("55P735", "65C745", "43P635", "55C845")
+                            "Smartphones" to "apple" -> listOf("iPhone 15", "iPhone 15 Pro", "iPhone 15 Pro Max", "iPhone 14")
+                            "Smartphones" to "samsung" -> listOf("Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy A55")
+                            "Laptops & PCs" to "apple" -> listOf("MacBook Air M3", "MacBook Pro 14 M3", "MacBook Pro 16 M3 Max")
+                            "Laptops & PCs" to "dell" -> listOf("XPS 15 9530", "XPS 13 Plus", "Inspiron 16", "Alienware m16")
+                            else -> listOf("MOD-01", "MOD-02", "MOD-03")
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                "Popular Models:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.align(Alignment.CenterVertically)
+                            )
+                            suggestedModels.forEach { sugModel ->
+                                FilterChip(
+                                    selected = model == sugModel,
+                                    onClick = {
+                                        model = sugModel
+                                        val sz = if (category == "LED TV" && size.isNotBlank()) " $size" else ""
+                                        name = "${brand.ifBlank { "Smart" }}$sz $category ($sugModel)".trim()
+                                        sku = "ELEC-${brand.uppercase().take(3).padEnd(3, 'X')}-$sugModel"
+                                    },
+                                    label = { Text(sugModel) }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         OutlinedTextField(
                             value = model,
                             onValueChange = {
@@ -366,26 +411,74 @@ fun AddEditItemDialog(
                         )
                     }
 
-                    // Cost Price & Selling Price Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = costPriceText,
-                            onValueChange = {
-                                costPriceText = it
-                                priceError = false
-                            },
-                            label = { Text("Cost Price ($)") },
-                            placeholder = { Text("0.00") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("item_cost_input"),
-                            singleLine = true
-                        )
+                    // Cost Price & Selling Price Row (DP Price is Owner Only)
+                    if (isOwner) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = costPriceText,
+                                onValueChange = {
+                                    costPriceText = it
+                                    priceError = false
+                                },
+                                label = { Text("DP Price (Cost) [Owner]") },
+                                placeholder = { Text("0.00") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("item_cost_input"),
+                                singleLine = true
+                            )
 
+                            OutlinedTextField(
+                                value = sellingPriceText,
+                                onValueChange = {
+                                    sellingPriceText = it
+                                    priceError = false
+                                },
+                                label = { Text("Selling Price ($) *") },
+                                placeholder = { Text("0.00") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                isError = priceError,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("item_price_input"),
+                                singleLine = true
+                            )
+                        }
+
+                        // Margin & Profit Preview Box for Owner
+                        if (price > 0.0) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Gross Profit: $${String.format(Locale.US, "%.2f", profit)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "Margin: ${String.format(Locale.US, "%.1f%%", margin)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (margin >= 25.0) StockInStock else if (margin >= 10.0) StockLowStock else StockOutOfStock
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        // For Non-Owner (e.g. Sales Associate): Only show Selling Price
                         OutlinedTextField(
                             value = sellingPriceText,
                             onValueChange = {
@@ -397,39 +490,10 @@ fun AddEditItemDialog(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             isError = priceError,
                             modifier = Modifier
-                                .weight(1f)
+                                .fillMaxWidth()
                                 .testTag("item_price_input"),
                             singleLine = true
                         )
-                    }
-
-                    // Margin & Profit Preview Box
-                    if (price > 0.0) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Gross Profit: $${String.format(Locale.US, "%.2f", profit)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "Margin: ${String.format(Locale.US, "%.1f%%", margin)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (margin >= 25.0) StockInStock else if (margin >= 10.0) StockLowStock else StockOutOfStock
-                                )
-                            }
-                        }
                     }
 
                     // Condition Dropdown & Location Row
@@ -508,18 +572,80 @@ fun AddEditItemDialog(
                 // Footer Actions
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedButton(onClick = onDismiss) {
                         Text("Cancel")
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    if (!isEdit) {
+                        OutlinedButton(
+                            onClick = {
+                                var hasError = false
+                                if (name.isBlank() && model.isNotBlank() && brand.isNotBlank()) {
+                                    val sz = if (category == "LED TV" && size.isNotBlank()) " $size" else ""
+                                    name = "$brand$sz $category ($model)".trim()
+                                }
+                                if (name.isBlank()) {
+                                    nameError = true
+                                    hasError = true
+                                }
+                                if (brand.isBlank()) {
+                                    brandError = true
+                                    hasError = true
+                                }
+                                val finalPrice = sellingPriceText.toDoubleOrNull()
+                                if (finalPrice == null || finalPrice <= 0.0) {
+                                    priceError = true
+                                    hasError = true
+                                }
+
+                                if (!hasError) {
+                                    val item = ElectronicsItem(
+                                        id = UUID.randomUUID().toString(),
+                                        name = name.trim(),
+                                        sku = sku.trim().ifBlank { generateSampleSku(category) },
+                                        category = category,
+                                        brand = brand.trim(),
+                                        size = size.trim(),
+                                        model = model.trim(),
+                                        quantity = quantityText.toIntOrNull() ?: 0,
+                                        minStockThreshold = thresholdText.toIntOrNull() ?: 3,
+                                        costPrice = costPriceText.toDoubleOrNull() ?: 0.0,
+                                        sellingPrice = finalPrice ?: 0.0,
+                                        condition = condition,
+                                        location = location.trim(),
+                                        warrantyMonths = warrantyText.toIntOrNull() ?: 12,
+                                        notes = notes.trim(),
+                                        createdAt = System.currentTimeMillis(),
+                                        updatedAt = System.currentTimeMillis()
+                                    )
+                                    onSave(item, false)
+                                    // Reset fields for the next model entry
+                                    model = ""
+                                    name = ""
+                                    sku = generateSampleSku(category)
+                                    quantityText = "5"
+                                }
+                            },
+                            modifier = Modifier.testTag("save_and_add_another_button")
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Save & Add Another")
+                        }
+                    }
 
                     Button(
                         onClick = {
                             var hasError = false
+                            if (name.isBlank() && model.isNotBlank() && brand.isNotBlank()) {
+                                val sz = if (category == "LED TV" && size.isNotBlank()) " $size" else ""
+                                name = "$brand$sz $category ($model)".trim()
+                            }
                             if (name.isBlank()) {
                                 nameError = true
                                 hasError = true
@@ -560,7 +686,7 @@ fun AddEditItemDialog(
                         },
                         modifier = Modifier.testTag("save_item_button")
                     ) {
-                        Text(if (isEdit) "Update Item" else "Save to Inventory")
+                        Text(if (isEdit) "Update Item" else "Save Product")
                     }
                 }
             }

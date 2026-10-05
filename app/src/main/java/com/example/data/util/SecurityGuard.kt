@@ -85,8 +85,8 @@ object SecurityGuard {
      */
     fun verifyOwnerPin(enteredPin: String, currentStaffPin: String? = null): Boolean {
         val cleanPin = enteredPin.trim()
-        val isMasterMatch = cleanPin == MASTER_OWNER_PIN
-        val isStaffPinMatch = !currentStaffPin.isNullOrBlank() && cleanPin == currentStaffPin.trim()
+        val isMasterMatch = cleanPin.equals(MASTER_OWNER_PIN, ignoreCase = true)
+        val isStaffPinMatch = !currentStaffPin.isNullOrBlank() && cleanPin.equals(currentStaffPin.trim(), ignoreCase = true)
 
         if (isMasterMatch || isStaffPinMatch) {
             // Reset failed counter and unlock immediately

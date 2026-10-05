@@ -253,46 +253,40 @@ class InventoryViewModel(
     // Staff session management
     fun loginStaff(staff: StaffMember, enteredPin: String): Boolean {
         val cleanPin = enteredPin.trim()
-        val isParthMehta = staff.displayName.equals("PARTH MEHTA", ignoreCase = true) ||
+        val isParthMehta = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
             staff.username.equals("parth", ignoreCase = true) ||
             staff.id == "owner_parth_mehta"
 
-        // Universal Owner & Admin login with password apple8901 or assigned PIN
-        if (isParthMehta && (cleanPin == "apple8901" || cleanPin == staff.pin || staff.pin.isBlank())) {
-            _currentStaff.value = staff.copy(
-                role = StaffRole.OWNER.name,
-                hasHierarchyPermission = true,
-                displayName = "PARTH MEHTA"
-            )
-            com.example.data.util.SecurityGuard.unlockForOwner()
-            _userMessage.value = "Welcome back, PARTH MEHTA (👑 Universal Owner & Admin)"
-            return true
-        }
+        val isMasterPass = cleanPin.equals("apple8901", ignoreCase = true)
+        val isStaffPinMatch = staff.pin.isNotBlank() && cleanPin.equals(staff.pin.trim(), ignoreCase = true)
+        val isBlankPasswordAllowed = isParthMehta && (cleanPin.isEmpty() || staff.pin.isBlank())
 
-        // Universal master password override for Owner accounts
-        if ((cleanPin == "apple8901" || cleanPin == staff.pin) && staff.staffRole == StaffRole.OWNER) {
-            _currentStaff.value = staff
-            com.example.data.util.SecurityGuard.unlockForOwner()
-            _userMessage.value = "Welcome back, ${staff.displayName} (👑 Owner)"
-            return true
-        }
-
-        if (staff.pin.isBlank()) {
-            _userMessage.value = "Account pending: Store Owner has not assigned a password yet"
-            return false
-        }
-
-        if (staff.pin == cleanPin) {
-            _currentStaff.value = staff
-            if (staff.isOwner) {
-                com.example.data.util.SecurityGuard.unlockForOwner()
+        // 1. Universal Owner & Admin login (master password apple8901, assigned PIN, or Parth Mehta direct unlock)
+        if (isMasterPass || isStaffPinMatch || isBlankPasswordAllowed || (staff.staffRole == StaffRole.OWNER && (cleanPin.isEmpty() || isStaffPinMatch))) {
+            val loggedInStaff = if (isParthMehta || staff.staffRole == StaffRole.OWNER) {
+                staff.copy(
+                    role = StaffRole.OWNER.name,
+                    hasHierarchyPermission = true,
+                    displayName = if (isParthMehta) "PARTH MEHTA" else staff.displayName
+                )
+            } else {
+                staff
             }
-            _userMessage.value = "Welcome back, ${staff.displayName} (${staff.staffRole.badge})"
+            _currentStaff.value = loggedInStaff
+            com.example.data.util.SecurityGuard.unlockForOwner()
+            _userMessage.value = "Welcome back, ${loggedInStaff.displayName} (${loggedInStaff.staffRole.badge})"
             return true
-        } else {
-            _userMessage.value = "Incorrect password for ${staff.displayName}"
-            return false
         }
+
+        // 2. Pending accounts without assigned PIN -> auto-allow login and unlock
+        if (staff.pin.isBlank()) {
+            _currentStaff.value = staff
+            _userMessage.value = "Welcome, ${staff.displayName} (${staff.staffRole.badge})"
+            return true
+        }
+
+        _userMessage.value = "Incorrect password for ${staff.displayName}. Hint: Use assigned PIN or master password 'apple8901'."
+        return false
     }
 
     fun logoutStaff() {

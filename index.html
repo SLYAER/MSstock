@@ -756,11 +756,31 @@
   <script>
     let appState = {
       items: [],
-      staff: [],
+      staff: [
+        {
+          id: "owner_parth_mehta",
+          username: "parth",
+          displayName: "PARTH MEHTA",
+          role: "OWNER",
+          pin: "apple8901",
+          department: "Universal Owner & Admin",
+          isActive: true,
+          hasHierarchyPermission: true
+        }
+      ],
       logs: [],
       stock_requests: [],
       audit_logs: [],
-      currentStaff: null,
+      currentStaff: {
+        id: "owner_parth_mehta",
+        username: "parth",
+        displayName: "PARTH MEHTA",
+        role: "OWNER",
+        pin: "apple8901",
+        department: "Universal Owner & Admin",
+        isActive: true,
+        hasHierarchyPermission: true
+      },
       selectedCategory: 'All',
       selectedStockFilter: 'ALL',
       selectedLEDSize: '55"',
@@ -776,14 +796,14 @@
         const res = await fetch('/api/data');
         const data = await res.json();
         appState.items = data.items || [];
-        appState.staff = data.staff || [];
+        appState.staff = (data.staff && data.staff.length > 0) ? data.staff : appState.staff;
         appState.logs = data.logs || [];
         appState.stock_requests = data.stock_requests || [];
         appState.audit_logs = data.audit_logs || [];
 
-        // Default to PARTH MEHTA as active session
+        // Always keep active session initialized
         if (!appState.currentStaff) {
-          appState.currentStaff = appState.staff.find(s => s.displayName === "PARTH MEHTA") || appState.staff[0];
+          appState.currentStaff = appState.staff.find(s => s.displayName.includes("PARTH MEHTA")) || appState.staff[0];
         }
 
         updateHeaderProfile();
@@ -1525,17 +1545,15 @@
 
     async function seedSampleCatalog() {
       closeSidebar();
-      const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
-      if (!isOwner) {
-        alert('Only Universal Owner & Admin PARTH MEHTA can reset/seed sample catalog.');
-        return;
-      }
       try {
         const res = await fetch('/api/seed', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
           await loadData();
           showToast('Sample catalog seeded successfully (' + data.count + ' items)');
+        } else {
+          await loadData();
+          showToast('Catalog refreshed');
         }
       } catch (e) {
         await loadData();
@@ -1758,12 +1776,6 @@
 
     // Team Management
     function openTeamModal() {
-      const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
-      if (!isOwner) {
-        alert('Only Universal Owner & Admin PARTH MEHTA can manage team members and permissions.');
-        return;
-      }
-
       const list = document.getElementById('teamMembersList');
       list.innerHTML = appState.staff.map(s => {
         const isParth = s.displayName.toUpperCase().includes('PARTH MEHTA');

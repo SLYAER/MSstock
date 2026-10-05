@@ -1,6 +1,18 @@
 package com.example.ui.inventory
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,13 +44,18 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.NorthWest
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.SubdirectoryArrowRight
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -82,6 +99,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -125,6 +143,7 @@ fun InventoryScreen(
     var itemToAdjust by remember { mutableStateOf<ElectronicsItem?>(null) }
     var itemToSell by remember { mutableStateOf<ElectronicsItem?>(null) }
     var itemToDelete by remember { mutableStateOf<ElectronicsItem?>(null) }
+    var itemForDetail by remember { mutableStateOf<ElectronicsItem?>(null) }
     var showLogsSheet by remember { mutableStateOf(false) }
     var showStaffDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
@@ -297,8 +316,18 @@ fun InventoryScreen(
                 )
             }
 
-            // Enhanced Search Bar & Direct Model Search Section
+            // Live Stock Alert Ticker Banner
             item {
+                LiveStockAlertBanner(
+                    stats = stats,
+                    onFilterLowStock = { viewModel.onStockFilterSelected(StockFilter.LOW_STOCK) },
+                    onFilterOutOfStock = { viewModel.onStockFilterSelected(StockFilter.OUT_OF_STOCK) }
+                )
+            }
+
+            // Enhanced Search Bar & Direct Model Search Section with Model Auto-Fill Suggestions
+            item {
+                val allItems = (rawItemsState as? UiState.Success<List<ElectronicsItem>>)?.data ?: emptyList()
                 SearchBarSection(
                     searchQuery = searchQuery,
                     onSearchQueryChanged = viewModel::onSearchQueryChanged,
@@ -306,6 +335,14 @@ fun InventoryScreen(
                     onSortOptionSelected = viewModel::onSortOptionSelected,
                     showSortMenu = showSortMenu,
                     onToggleSortMenu = { showSortMenu = !showSortMenu },
+                    allItems = allItems,
+                    onQuickRegisterModel = { modelNum ->
+                        itemToEdit = ElectronicsItem(
+                            category = "LED TV",
+                            model = modelNum
+                        )
+                        showAddDialog = true
+                    },
                     onOpenHierarchyFilter = { cat, size ->
                         if (canAccessHierarchy) {
                             hierarchyInitialCategory = cat
@@ -407,6 +444,7 @@ fun InventoryScreen(
                                 canViewCosts = canViewCosts,
                                 canEdit = canEditItemDetails,
                                 canDelete = canDeleteItems,
+                                onViewDetail = { itemForDetail = item },
                                 onSell = { itemToSell = item },
                                 onAdjust = { itemToAdjust = item },
                                 onEdit = {
@@ -420,6 +458,28 @@ fun InventoryScreen(
                 }
             }
         }
+    }
+
+    // Product Detail & Specifications Sheet Dialog
+    itemForDetail?.let { item ->
+        ProductDetailDialog(
+            item = item,
+            canViewCosts = canViewCosts,
+            onDismiss = { itemForDetail = null },
+            onSell = {
+                itemForDetail = null
+                itemToSell = item
+            },
+            onAdjust = {
+                itemForDetail = null
+                itemToAdjust = item
+            },
+            onEdit = {
+                itemForDetail = null
+                itemToEdit = item
+                showAddDialog = true
+            }
+        )
     }
 
     // Hierarchical Stock Availability Explorer Dialog (Brand > Size > Model with greyed out out-of-stock brands)
@@ -764,6 +824,115 @@ private fun MetricColumn(title: String, value: String) {
 }
 
 @Composable
+private fun LiveStockAlertBanner(
+    stats: InventoryStats,
+    onFilterLowStock: () -> Unit,
+    onFilterOutOfStock: () -> Unit
+) {
+    val hasAlerts = stats.lowStockCount > 0 || stats.outOfStockCount > 0
+
+    AnimatedVisibility(
+        visible = hasAlerts,
+        enter = fadeIn(animationSpec = tween(300)) + expandVertically(),
+        exit = fadeOut(animationSpec = tween(250)) + shrinkVertically()
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .animateContentSize(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (stats.outOfStockCount > 0) {
+                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f)
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f)
+                }
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = if (stats.outOfStockCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Stock Alert",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = if (stats.outOfStockCount > 0) "Immediate Reorder Required" else "Low Stock Warning",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = if (stats.outOfStockCount > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        Text(
+                            text = buildString {
+                                if (stats.outOfStockCount > 0) append("${stats.outOfStockCount} out of stock")
+                                if (stats.outOfStockCount > 0 && stats.lowStockCount > 0) append(" • ")
+                                if (stats.lowStockCount > 0) append("${stats.lowStockCount} running low")
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (stats.outOfStockCount > 0) MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (stats.outOfStockCount > 0) {
+                        Surface(
+                            onClick = onFilterOutOfStock,
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.error
+                        ) {
+                            Text(
+                                text = "Out (${stats.outOfStockCount})",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                    if (stats.lowStockCount > 0) {
+                        Surface(
+                            onClick = onFilterLowStock,
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.tertiary
+                        ) {
+                            Text(
+                                text = "Low (${stats.lowStockCount})",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun SearchBarSection(
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
@@ -771,12 +940,52 @@ private fun SearchBarSection(
     onSortOptionSelected: (SortOption) -> Unit,
     showSortMenu: Boolean,
     onToggleSortMenu: () -> Unit,
+    allItems: List<ElectronicsItem> = emptyList(),
+    onQuickRegisterModel: ((String) -> Unit)? = null,
     onOpenHierarchyFilter: (category: String, size: String?) -> Unit
 ) {
+    // Model Auto-Fill suggestions computed as the user types
+    val modelSuggestions = remember(allItems, searchQuery) {
+        val query = searchQuery.trim()
+        if (query.isEmpty()) {
+            emptyList()
+        } else {
+            allItems
+                .filter { item ->
+                    item.model.contains(query, ignoreCase = true) ||
+                    item.name.contains(query, ignoreCase = true) ||
+                    item.brand.contains(query, ignoreCase = true) ||
+                    item.sku.contains(query, ignoreCase = true)
+                }
+                .distinctBy { it.model.ifBlank { it.name } }
+                .sortedWith(
+                    compareByDescending<ElectronicsItem> {
+                        it.model.startsWith(query, ignoreCase = true)
+                    }.thenByDescending {
+                        it.brand.startsWith(query, ignoreCase = true)
+                    }.thenByDescending {
+                        it.quantity > 0
+                    }
+                )
+                .take(5)
+        }
+    }
+
+    // Popular models for quick fill when search is empty or focused
+    val quickPopularModels = remember(allItems) {
+        val distinctModels = allItems
+            .map { it.model.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .take(6)
+        if (distinctModels.isNotEmpty()) distinctModels else listOf("55U6G", "43A6H", "OLED55C3", "BRAVIA-55X90L", "55LE5000", "H55P750UX")
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
+            .animateContentSize()
     ) {
         // Main Search Bar with direct Model Number search
         Row(
@@ -791,7 +1000,7 @@ private fun SearchBarSection(
                 modifier = Modifier
                     .weight(1f)
                     .testTag("inventory_search_field"),
-                placeholder = { Text("Search model # (55U6G, 55UIF) or type 'LED'...") },
+                placeholder = { Text("Search model # (55U6G, OLED55C3) or 'LED'...") },
                 leadingIcon = {
                     IconButton(
                         onClick = {
@@ -863,6 +1072,245 @@ private fun SearchBarSection(
                                 onToggleSortMenu()
                             }
                         )
+                    }
+                }
+            }
+        }
+
+        // Smooth Auto-Fill Model Suggestions Dropdown Panel
+        AnimatedVisibility(
+            visible = searchQuery.isNotBlank() && modelSuggestions.isNotEmpty(),
+            enter = fadeIn(animationSpec = tween(200)) + expandVertically(),
+            exit = fadeOut(animationSpec = tween(150)) + shrinkVertically()
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.SubdirectoryArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Suggested Models (Tap to Auto-fill)",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = "${modelSuggestions.size} match${if (modelSuggestions.size > 1) "es" else ""}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    modelSuggestions.forEach { suggestion ->
+                        val isExactMatch = suggestion.model.equals(searchQuery.trim(), ignoreCase = true)
+                        Surface(
+                            onClick = {
+                                onSearchQueryChanged(suggestion.model.ifBlank { suggestion.name })
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isExactMatch) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp)
+                                .testTag("model_suggestion_${suggestion.model}")
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    ) {
+                                        Text(
+                                            text = suggestion.model.ifBlank { "N/A" },
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Column {
+                                        Text(
+                                            text = "${suggestion.brand} • ${suggestion.name}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "${suggestion.category}${if (suggestion.size.isNotBlank()) " (${suggestion.size})" else ""}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    // Stock availability badge (greyed out if out of stock!)
+                                    val (badgeBg, badgeText, badgeColor) = if (suggestion.isOutOfStock) {
+                                        Triple(Color.LightGray.copy(alpha = 0.4f), "Out of Stock", Color.DarkGray)
+                                    } else {
+                                        Triple(StockInStock.copy(alpha = 0.15f), "${suggestion.quantity} in stock", StockInStock)
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = badgeBg
+                                    ) {
+                                        Text(
+                                            text = badgeText,
+                                            color = badgeColor,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(6.dp))
+
+                                    Icon(
+                                        imageVector = Icons.Default.NorthWest,
+                                        contentDescription = "Fill ${suggestion.model}",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Quick Model Not Found -> Register Shortcut
+        AnimatedVisibility(
+            visible = searchQuery.isNotBlank() && modelSuggestions.isEmpty() && !searchQuery.contains("led", ignoreCase = true) && !searchQuery.contains("tv", ignoreCase = true),
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Model \"${searchQuery.trim()}\" not yet registered",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Tap to quick-register this model in inventory",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (onQuickRegisterModel != null) {
+                        Button(
+                            onClick = { onQuickRegisterModel(searchQuery.trim()) },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Register", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Popular Model Chips (When search query is blank)
+        AnimatedVisibility(
+            visible = searchQuery.isBlank() && quickPopularModels.isNotEmpty(),
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Column(modifier = Modifier.padding(top = 4.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "⚡ Quick Models:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    quickPopularModels.forEach { modelNum ->
+                        Surface(
+                            onClick = { onSearchQueryChanged(modelNum) },
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = modelNum,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.NorthWest,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(10.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1037,6 +1485,7 @@ private fun ElectronicsItemCard(
     canViewCosts: Boolean,
     canEdit: Boolean,
     canDelete: Boolean,
+    onViewDetail: () -> Unit,
     onSell: () -> Unit,
     onAdjust: () -> Unit,
     onEdit: () -> Unit,
@@ -1045,9 +1494,11 @@ private fun ElectronicsItemCard(
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
 
     Card(
+        onClick = onViewDetail,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
+            .animateContentSize()
             .testTag("item_card_${item.sku}"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -1220,6 +1671,15 @@ private fun ElectronicsItemCard(
                     Text("Stock", fontSize = 13.sp)
                 }
 
+                // Info / Specs Button
+                IconButton(onClick = onViewDetail) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "View Specifications & Stock Details",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
                 if (canEdit) {
                     IconButton(onClick = onEdit) {
                         Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Item", tint = MaterialTheme.colorScheme.primary)
@@ -1233,6 +1693,252 @@ private fun ElectronicsItemCard(
                 }
             }
         }
+    }
+}
+
+// Product Detail & Specifications Sheet Dialog
+@Composable
+fun ProductDetailDialog(
+    item: ElectronicsItem,
+    canViewCosts: Boolean,
+    onDismiss: () -> Unit,
+    onSell: () -> Unit,
+    onAdjust: () -> Unit,
+    onEdit: () -> Unit
+) {
+    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
+    val (stockBg, stockTextColor, stockText) = when {
+        item.isOutOfStock -> Triple(StockOutOfStock.copy(alpha = 0.15f), StockOutOfStock, "Out of Stock (0 units)")
+        item.isLowStock -> Triple(StockLowStock.copy(alpha = 0.15f), StockLowStock, "Low Stock Alert (${item.quantity} units remaining)")
+        else -> Triple(StockInStock.copy(alpha = 0.15f), StockInStock, "In Stock (${item.quantity} units available)")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = getCategoryIcon(item.category),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.brand,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize()
+            ) {
+                // Stock Health Pill
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = stockBg,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (item.isOutOfStock || item.isLowStock) Icons.Default.Warning else Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = stockTextColor,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stockText,
+                                color = stockTextColor,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = "Min: ${item.minStockThreshold}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = stockTextColor.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Model, SKU & Location specifications
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        DetailSpecRow(label = "Model #", value = item.model.ifBlank { "Standard" }, isHighlight = true)
+                        DetailSpecRow(label = "SKU Barcode", value = item.sku)
+                        DetailSpecRow(label = "Category", value = item.category)
+                        if (item.size.isNotBlank()) {
+                            DetailSpecRow(label = "Screen / Size", value = item.size, isHighlight = true)
+                        }
+                        DetailSpecRow(label = "Stock Location", value = item.location.ifBlank { "Main Floor" })
+                        DetailSpecRow(label = "Warranty", value = "${item.warrantyMonths} Months")
+                        if (item.condition.isNotBlank()) {
+                            DetailSpecRow(label = "Condition", value = item.condition)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Pricing Card
+                Card(
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Retail Selling Price",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = currencyFormat.format(item.sellingPrice),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            if (canViewCosts) {
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "Wholesale: ${currencyFormat.format(item.costPrice)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    val margin = item.profitMarginPercent
+                                    Text(
+                                        text = "Margin: ${String.format(Locale.US, "%.1f%%", margin)}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (margin >= 20.0) StockInStock else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        if (canViewCosts) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Total Value in Stock:",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = currencyFormat.format(item.sellingPrice * item.quantity),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onAdjust,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Stock")
+                }
+                Button(
+                    onClick = onSell,
+                    enabled = item.quantity > 0,
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Icon(imageVector = Icons.Default.PointOfSale, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Sell")
+                }
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onEdit) {
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Edit")
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun DetailSpecRow(label: String, value: String, isHighlight: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (isHighlight) FontWeight.Bold else FontWeight.Medium,
+            color = if (isHighlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

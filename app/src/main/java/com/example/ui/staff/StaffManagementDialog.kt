@@ -348,13 +348,32 @@ private fun StaffMemberItemRow(
                     )
                 }
 
+                val isUniversalOwner = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
+                    staff.username.equals("parth", ignoreCase = true) ||
+                    staff.id == "owner_parth_mehta"
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = staff.staffRole.badge,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (isUniversalOwner) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = "👑 Universal Owner & Admin",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = staff.staffRole.badge,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     if (staff.pin.isNotBlank()) {
                         Text(
                             text = " • Password: ${staff.pin}",
@@ -424,7 +443,12 @@ private fun StaffMemberItemRow(
                 )
             }
 
-            if (staff.staffRole != StaffRole.OWNER || staff.username != "owner") {
+            val isProtectedAdmin = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
+                staff.username.equals("parth", ignoreCase = true) ||
+                staff.id == "owner_parth_mehta" ||
+                (staff.staffRole == StaffRole.OWNER && staff.username == "owner")
+
+            if (!isProtectedAdmin) {
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,

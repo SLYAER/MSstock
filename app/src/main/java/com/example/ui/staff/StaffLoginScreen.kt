@@ -186,7 +186,7 @@ fun StaffLoginScreen(
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.testTag("init_owner_button")
                                 ) {
-                                    Text("Initialize Store Owner (Default PIN: 1234)")
+                                    Text("Initialize Store Owner: PARTH MEHTA (PIN: apple8901)")
                                 }
                             }
                         }
@@ -366,8 +366,11 @@ fun StaffLoginScreen(
                                             singleLine = true,
                                             isError = passwordError != null,
                                             supportingText = {
+                                                val isParth = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
+                                                    staff.username.equals("parth", ignoreCase = true)
                                                 passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                                                    ?: if (staff.username == "owner") Text("Initial default PIN: 1234") else null
+                                                    ?: if (isParth) Text("Universal Owner password: apple8901", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                                                    else null
                                             },
                                             visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -403,9 +406,11 @@ fun StaffLoginScreen(
                                                 .testTag("unlock_app_button"),
                                             shape = RoundedCornerShape(12.dp)
                                         ) {
+                                            val isParth = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
+                                                staff.username.equals("parth", ignoreCase = true)
                                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Unlock MSstock (${staff.staffRole.label})")
+                                            Text(if (isParth) "Unlock as Universal Owner & Admin" else "Unlock MSstock (${staff.staffRole.label})")
                                         }
                                     }
                                 }
@@ -443,6 +448,10 @@ private fun StaffSelectableCard(
     staff: StaffMember,
     onSelect: () -> Unit
 ) {
+    val isUniversalOwner = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
+        staff.username.equals("parth", ignoreCase = true) ||
+        staff.id == "owner_parth_mehta"
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -450,7 +459,8 @@ private fun StaffSelectableCard(
             .testTag("staff_card_${staff.username}"),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            containerColor = if (isUniversalOwner) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
         )
     ) {
         Row(
@@ -460,36 +470,64 @@ private fun StaffSelectableCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(42.dp),
                 shape = CircleShape,
-                color = when (staff.staffRole) {
-                    StaffRole.OWNER -> MaterialTheme.colorScheme.primaryContainer
-                    StaffRole.SALES -> Color(0xFFE8F5E9)
-                    StaffRole.MANAGER -> Color(0xFFFFF3E0)
-                    StaffRole.CLERK -> Color(0xFFE1F5FE)
+                color = when {
+                    isUniversalOwner -> MaterialTheme.colorScheme.primaryContainer
+                    staff.staffRole == StaffRole.OWNER -> MaterialTheme.colorScheme.primaryContainer
+                    staff.staffRole == StaffRole.SALES -> Color(0xFFE8F5E9)
+                    staff.staffRole == StaffRole.MANAGER -> Color(0xFFFFF3E0)
+                    else -> Color(0xFFE1F5FE)
                 }
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = staff.displayName.firstOrNull()?.uppercase() ?: "S",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (isUniversalOwner) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = "Universal Owner",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text(
+                            text = staff.displayName.firstOrNull()?.uppercase() ?: "S",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = staff.displayName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (isUniversalOwner) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = "👑 UNIVERSAL ADMIN",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                }
                 Text(
-                    text = staff.displayName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${staff.staffRole.badge} • @${staff.username}",
+                    text = if (isUniversalOwner) "Universal Owner & Admin • @${staff.username}" else "${staff.staffRole.badge} • @${staff.username}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isUniversalOwner) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (isUniversalOwner) FontWeight.SemiBold else FontWeight.Normal
                 )
             }
 

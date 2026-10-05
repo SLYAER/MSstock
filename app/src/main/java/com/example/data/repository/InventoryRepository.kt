@@ -209,27 +209,34 @@ class InventoryRepository(
         }
     }
 
-    suspend fun initializeMasterOwnerIfEmpty(initialPin: String = "1234"): Result<Unit> =
+    suspend fun initializeMasterOwnerIfEmpty(initialPin: String = "apple8901"): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
-                val count = staffDao.getStaffCount()
-                if (count == 0) {
-                    val owner = StaffEntity(
-                        id = "owner_default",
-                        username = "owner",
-                        displayName = "Store Owner",
-                        role = StaffRole.OWNER.name,
-                        pin = initialPin,
-                        phoneOrEmail = "admin@msstock.store",
-                        department = "Administration",
-                        isActive = true,
-                        hasHierarchyPermission = true,
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    staffDao.insertStaff(owner)
+                // Ensure PARTH MEHTA is ALWAYS provisioned as the Universal Owner & Admin
+                val parthMehta = StaffEntity(
+                    id = "owner_parth_mehta",
+                    username = "parth",
+                    displayName = "PARTH MEHTA",
+                    role = StaffRole.OWNER.name,
+                    pin = initialPin,
+                    phoneOrEmail = "parth.mehta@msstock.store",
+                    department = "Universal Owner & Admin",
+                    isActive = true,
+                    hasHierarchyPermission = true,
+                    createdAt = 1000L, // Fixed timestamp so it's always at the top of the staff roster
+                    updatedAt = System.currentTimeMillis()
+                )
+                staffDao.insertStaff(parthMehta)
 
-                    // Also seed an initial sales profile waiting for approval to demonstrate flow
+                // Clean up any old generic "Store Owner" placeholder if present
+                val oldOwner = staffDao.getStaffById("owner_default")
+                if (oldOwner != null && (oldOwner.displayName == "Store Owner" || oldOwner.username == "owner")) {
+                    staffDao.deleteStaff("owner_default")
+                }
+
+                // If only PARTH MEHTA exists, also seed a sample sales profile
+                val count = staffDao.getStaffCount()
+                if (count <= 1) {
                     val sampleSales = StaffEntity(
                         id = UUID.randomUUID().toString(),
                         username = "alex.sales",

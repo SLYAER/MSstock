@@ -1,5 +1,15 @@
 package com.example.ui.inventory
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Security
@@ -57,6 +68,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -390,9 +402,16 @@ fun BrandAvailabilityCard(
         MaterialTheme.colorScheme.primaryContainer
     }
 
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "brand_chevron"
+    )
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
             .clickable(onClick = onToggleExpand)
             .testTag("brand_card_${summary.brandName}"),
         shape = RoundedCornerShape(16.dp),
@@ -464,39 +483,51 @@ fun BrandAvailabilityCard(
                     }
                 }
 
-                // Availability Status Chip
-                if (isOutOfStock) {
-                    // Visibly Grey "Out of Stock" chip
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFCBD5E1)
-                    ) {
-                        Text(
-                            text = "❌ Out of Stock (0)",
-                            color = Color(0xFF475569),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                        )
+                // Availability Status Chip + Animated Chevron
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isOutOfStock) {
+                        // Visibly Grey "Out of Stock" chip
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFCBD5E1)
+                        ) {
+                            Text(
+                                text = "❌ Out of Stock (0)",
+                                color = Color(0xFF475569),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
+                    } else {
+                        // Vibrant In Stock chip
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = StockInStock.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = "✅ ${summary.totalStock} in stock",
+                                color = StockInStock,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                            )
+                        }
                     }
-                } else {
-                    // Vibrant In Stock chip
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = StockInStock.copy(alpha = 0.15f)
-                    ) {
-                        Text(
-                            text = "✅ ${summary.totalStock} in stock",
-                            color = StockInStock,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                        )
-                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .rotate(chevronRotation),
+                        tint = if (isOutOfStock) Color(0xFF94A3B8) else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            // Click hint or Expanded Model Availability view
+            // Click hint
             if (!isExpanded) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
@@ -504,35 +535,44 @@ fun BrandAvailabilityCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = if (isOutOfStock) Color(0xFF94A3B8) else MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                 )
-            } else {
-                Spacer(modifier = Modifier.height(14.dp))
-                HorizontalDivider(color = if (isOutOfStock) Color(0xFFCBD5E1) else MaterialTheme.colorScheme.outlineVariant)
-                Spacer(modifier = Modifier.height(12.dp))
+            }
 
-                Text(
-                    text = "MODELS AVAILABLE FOR ${summary.brandName.uppercase()} ($selectedSize):",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor
-                )
+            // Expanded Model Availability view with smooth animation
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn(tween(180)) + expandVertically(spring(stiffness = Spring.StiffnessMediumLow)),
+                exit = fadeOut(tween(140)) + shrinkVertically(spring(stiffness = Spring.StiffnessMediumLow))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = if (isOutOfStock) Color(0xFFCBD5E1) else MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                if (summary.items.isEmpty()) {
                     Text(
-                        text = "No models currently in inventory for ${summary.brandName} in $selectedSize.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF94A3B8)
+                        text = "MODELS AVAILABLE FOR ${summary.brandName.uppercase()} ($selectedSize):",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = contentColor
                     )
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        summary.items.forEach { item ->
-                            ModelAvailabilityItemCard(
-                                item = item,
-                                canViewCosts = canViewCosts,
-                                onSell = { onSellItem(item) },
-                                onAdjust = { onAdjustStock(item) }
-                            )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (summary.items.isEmpty()) {
+                        Text(
+                            text = "No models currently in inventory for ${summary.brandName} in $selectedSize.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8)
+                        )
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            summary.items.forEach { item ->
+                                ModelAvailabilityItemCard(
+                                    item = item,
+                                    canViewCosts = canViewCosts,
+                                    onSell = { onSellItem(item) },
+                                    onAdjust = { onAdjustStock(item) }
+                                )
+                            }
                         }
                     }
                 }

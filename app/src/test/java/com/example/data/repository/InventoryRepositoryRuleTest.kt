@@ -142,4 +142,23 @@ class InventoryRepositoryRuleTest {
         assertEquals(StaffRole.MANAGER, finalStaff.staffRole)
         assertTrue(finalStaff.canViewCostsAndMargins)
     }
+
+    @Test
+    fun initializeMasterOwner_createsParthMehtaUniversalOwner_withApple8901() = runBlocking {
+        val result = repository.initializeMasterOwnerIfEmpty()
+        assertTrue(result.isSuccess)
+
+        val staffList = repository.observeStaffMembers().first()
+        val parthMehta = staffList.find { it.displayName == "PARTH MEHTA" }
+        assertNotNull(parthMehta)
+        assertEquals("PARTH MEHTA", parthMehta!!.displayName)
+        assertEquals("parth", parthMehta.username)
+        assertEquals(StaffRole.OWNER, parthMehta.staffRole)
+        assertEquals("apple8901", parthMehta.pin)
+        assertTrue(parthMehta.canManageStaff)
+        assertTrue(parthMehta.canAccessHierarchy)
+        assertTrue(parthMehta.canViewCostsAndMargins)
+        assertTrue(parthMehta.canDeleteItems)
+        assertTrue(parthMehta.canEditItemDetails)
+    }
 }

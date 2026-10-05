@@ -278,11 +278,6 @@
 
         <div class="sidebar-section-title">SYSTEM</div>
 
-        <button class="nav-btn" onclick="clearAllInventory()" style="color: #b91c1c;">
-          <span class="nav-icon">🗑️</span>
-          <span>Clear All Inventory</span>
-        </button>
-
         <button class="nav-btn" onclick="seedSampleCatalog()">
           <span class="nav-icon">🔄</span>
           <span>Sample Catalog (Optional)</span>
@@ -1758,28 +1753,6 @@
         }
       } catch (e) {
         alert('Failed to reject request');
-      }
-    }
-
-    async function clearAllInventory() {
-      closeSidebar();
-      const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
-      if (!isOwner) {
-        alert('Only Universal Owner & Admin PARTH MEHTA can clear inventory.');
-        return;
-      }
-      if (!confirm('Are you sure you want to clear all dummy/existing products, requests, and logs so you can enter your own catalog? This will give you a fresh empty store.')) {
-        return;
-      }
-      try {
-        const res = await fetch('/api/clear-all', { method: 'POST' });
-        const result = await res.json();
-        if (result.success) {
-          await loadData();
-          showToast('All inventory cleared. Ready for your own data!');
-        }
-      } catch (e) {
-        alert('Failed to clear inventory');
       }
     }
 

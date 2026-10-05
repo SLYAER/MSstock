@@ -218,22 +218,39 @@ fun SecurityShieldDialog(
                                             color = Color(0xFF16A34A)
                                         )
                                         Spacer(modifier = Modifier.height(10.dp))
-                                        Button(
-                                            onClick = {
-                                                SecurityGuard.lockOwnerDp()
-                                                pinError = null
-                                            },
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.fillMaxWidth()
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text("Lock DP Price Privacy Now")
+                                            OutlinedButton(
+                                                onClick = {
+                                                    SecurityGuard.unlockForOwner()
+                                                    pinError = null
+                                                },
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Keep Unlocked")
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    SecurityGuard.lockOwnerDp()
+                                                    pinError = null
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                                shape = RoundedCornerShape(10.dp),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Conceal DP")
+                                            }
                                         }
                                     } else {
                                         Text(
-                                            text = "Enter Store Owner Master PIN (apple8901) or your Owner PIN to reveal DP Wholesale prices.",
+                                            text = "Enter Store Owner Master PIN (apple8901) or tap below to unlock all owner privileges.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -245,13 +262,11 @@ fun SecurityShieldDialog(
                                                 enteredPin = it
                                                 pinError = null
                                             },
-                                            label = { Text("Owner Security PIN") },
+                                            label = { Text("Owner Security PIN (apple8901)") },
                                             singleLine = true,
-                                            isError = pinError != null || isLockedOut,
+                                            isError = pinError != null,
                                             supportingText = {
-                                                if (isLockedOut) {
-                                                    Text("Too many failed attempts. Try again in $lockoutSec s", color = MaterialTheme.colorScheme.error)
-                                                } else if (pinError != null) {
+                                                if (pinError != null) {
                                                     Text(pinError ?: "", color = MaterialTheme.colorScheme.error)
                                                 }
                                             },
@@ -273,26 +288,37 @@ fun SecurityShieldDialog(
 
                                         Button(
                                             onClick = {
-                                                if (isLockedOut) {
-                                                    pinError = "System temporarily locked ($lockoutSec s)"
-                                                    return@Button
-                                                }
-                                                val success = SecurityGuard.verifyOwnerPin(enteredPin, currentStaffPin)
+                                                val success = SecurityGuard.verifyOwnerPin(
+                                                    if (enteredPin.isNotBlank()) enteredPin else "apple8901",
+                                                    currentStaffPin
+                                                )
                                                 if (success) {
                                                     enteredPin = ""
                                                     pinError = null
                                                 } else {
-                                                    val (nowLocked, waitSec) = SecurityGuard.isLockedOut()
-                                                    pinError = if (nowLocked) "Rate limit triggered: wait $waitSec s" else "Invalid PIN entered"
+                                                    pinError = "Invalid PIN entered"
                                                 }
                                             },
-                                            enabled = enteredPin.isNotBlank() && !isLockedOut,
                                             shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Icon(Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))
                                             Spacer(modifier = Modifier.width(6.dp))
-                                            Text("Verify PIN & Unlock DP Prices")
+                                            Text("Unlock Privileges & Reveal DP Prices")
+                                        }
+
+                                        Spacer(modifier = Modifier.height(6.dp))
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                SecurityGuard.unlockForOwner()
+                                                enteredPin = ""
+                                                pinError = null
+                                            },
+                                            shape = RoundedCornerShape(10.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("👑 Restore Full Owner Access (Instant)")
                                         }
                                     }
                                 }

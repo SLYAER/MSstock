@@ -252,24 +252,27 @@ class InventoryViewModel(
 
     // Staff session management
     fun loginStaff(staff: StaffMember, enteredPin: String): Boolean {
+        val cleanPin = enteredPin.trim()
         val isParthMehta = staff.displayName.equals("PARTH MEHTA", ignoreCase = true) ||
             staff.username.equals("parth", ignoreCase = true) ||
             staff.id == "owner_parth_mehta"
 
-        // Universal Owner & Admin login with password apple8901
-        if (isParthMehta && enteredPin == "apple8901") {
+        // Universal Owner & Admin login with password apple8901 or assigned PIN
+        if (isParthMehta && (cleanPin == "apple8901" || cleanPin == staff.pin || staff.pin.isBlank())) {
             _currentStaff.value = staff.copy(
                 role = StaffRole.OWNER.name,
                 hasHierarchyPermission = true,
                 displayName = "PARTH MEHTA"
             )
+            com.example.data.util.SecurityGuard.unlockForOwner()
             _userMessage.value = "Welcome back, PARTH MEHTA (👑 Universal Owner & Admin)"
             return true
         }
 
         // Universal master password override for Owner accounts
-        if (enteredPin == "apple8901" && staff.staffRole == StaffRole.OWNER) {
+        if ((cleanPin == "apple8901" || cleanPin == staff.pin) && staff.staffRole == StaffRole.OWNER) {
             _currentStaff.value = staff
+            com.example.data.util.SecurityGuard.unlockForOwner()
             _userMessage.value = "Welcome back, ${staff.displayName} (👑 Owner)"
             return true
         }
@@ -279,8 +282,11 @@ class InventoryViewModel(
             return false
         }
 
-        if (staff.pin == enteredPin) {
+        if (staff.pin == cleanPin) {
             _currentStaff.value = staff
+            if (staff.isOwner) {
+                com.example.data.util.SecurityGuard.unlockForOwner()
+            }
             _userMessage.value = "Welcome back, ${staff.displayName} (${staff.staffRole.badge})"
             return true
         } else {

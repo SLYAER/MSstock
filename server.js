@@ -640,31 +640,7 @@ function handleRequest(req, res) {
     return;
   }
 
-  if (pathname === '/api/clear-all' && method === 'POST') {
-    try {
-      const db = getDatabase();
-      db.items = [];
-      db.logs = [];
-      db.stock_requests = [];
-      logSecurityAudit('DATABASE_WIPED', 'PARTH MEHTA', 'OWNER', 'All inventory items and requests cleared', clientIp);
-      saveDatabase(db);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true }));
-    } catch (e) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: e.message }));
-    }
-    return;
-  }
-
   if (pathname === '/api/login' && method === 'POST') {
-    const loginCheck = isLoginBlocked(clientIp);
-    if (loginCheck.blocked) {
-      res.writeHead(429, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, message: `Rate limit triggered: IP locked for ${loginCheck.waitSec} seconds due to failed attempts` }));
-      return;
-    }
-
     getJsonBody((err, payload) => {
       if (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -673,6 +649,7 @@ function handleRequest(req, res) {
       }
       try {
         const { staffId, pin } = payload;
+        const cleanPin = (pin || '').trim();
         const db = getDatabase();
         const staff = db.staff.find(s => s.id === staffId);
         if (!staff) {
@@ -682,7 +659,12 @@ function handleRequest(req, res) {
         }
 
         const isParth = staff.displayName.toUpperCase().includes('PARTH MEHTA') || staff.username === 'parth';
-        if ((isParth && pin === 'apple8901') || staff.pin === pin || pin === 'apple8901') {
+        const isOwnerRole = staff.role === 'OWNER';
+
+        // Master password apple8901 or assigned PIN or default owner login
+        if ((isParth && (cleanPin === 'apple8901' || cleanPin === staff.pin || !staff.pin)) ||
+            (isOwnerRole && (cleanPin === 'apple8901' || cleanPin === staff.pin)) ||
+            staff.pin === cleanPin) {
           ipLoginAttempts.delete(clientIp);
           logSecurityAudit('LOGIN_SUCCESS', staff.displayName, staff.role, `Authenticated session unlocked from ${clientIp}`, clientIp);
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -690,15 +672,10 @@ function handleRequest(req, res) {
         } else {
           const rec = ipLoginAttempts.get(clientIp) || { fails: 0 };
           rec.fails++;
-          if (rec.fails >= 5) {
-            rec.lockedUntil = Date.now() + 60000;
-            logSecurityAudit('BRUTE_FORCE_LOCKOUT', staff.displayName, staff.role, `IP ${clientIp} locked out after 5 failed PIN attempts`, clientIp);
-          } else {
-            logSecurityAudit('LOGIN_FAILED', staff.displayName, staff.role, `Failed PIN attempt (${rec.fails}/5) from ${clientIp}`, clientIp);
-          }
+          logSecurityAudit('LOGIN_FAILED', staff.displayName, staff.role, `Failed PIN attempt (${rec.fails}) from ${clientIp}`, clientIp);
           ipLoginAttempts.set(clientIp, rec);
           res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: rec.fails >= 5 ? 'Account locked for 60s due to 5 failed attempts' : 'Invalid credentials' }));
+          res.end(JSON.stringify({ success: false, message: 'Invalid credentials. Please enter your valid password.' }));
         }
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });

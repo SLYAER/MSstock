@@ -170,7 +170,6 @@ fun InventoryScreen(
     var itemToRequestStock by remember { mutableStateOf<ElectronicsItem?>(null) }
     var showStockRequestsDialog by remember { mutableStateOf(false) }
     var showSecurityShieldDialog by remember { mutableStateOf(false) }
-    var showClearInventoryConfirm by remember { mutableStateOf(false) }
     var showLogsSheet by remember { mutableStateOf(false) }
     var showStaffDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
@@ -569,33 +568,6 @@ fun InventoryScreen(
                         .padding(NavigationDrawerItemDefaults.ItemPadding)
                         .testTag("sidebar_nav_security")
                 )
-
-                // Sidebar Option 8: Clear All Inventory / Wipe Dummy Data (Owner only)
-                if (canViewCosts) {
-                    NavigationDrawerItem(
-                        label = {
-                            Text(
-                                "Clear All Inventory",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        },
-                        selected = false,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            showClearInventoryConfirm = true
-                        },
-                        icon = {
-                            Icon(
-                                Icons.Default.DeleteSweep,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        },
-                        modifier = Modifier
-                            .padding(NavigationDrawerItemDefaults.ItemPadding)
-                            .testTag("sidebar_nav_clear_inventory")
-                    )
-                }
 
                 Spacer(modifier = Modifier.weight(1f))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -1131,39 +1103,6 @@ fun InventoryScreen(
             },
             onDelete = { requestId ->
                 viewModel.deleteStockRequest(requestId)
-            }
-        )
-    }
-
-    // Clear All Inventory Confirmation Dialog (Owner tool to start with clean store catalog)
-    if (showClearInventoryConfirm) {
-        AlertDialog(
-            onDismissRequest = { showClearInventoryConfirm = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clear All Inventory?")
-                }
-            },
-            text = {
-                Text("This will remove all dummy/demo products and stock logs so you can enter your own store inventory.\n\nPARTH MEHTA universal owner account and staff credentials will remain active.")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showClearInventoryConfirm = false
-                        viewModel.clearAllInventory()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Clear All Data")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearInventoryConfirm = false }) {
-                    Text("Cancel")
-                }
             }
         )
     }
@@ -2210,29 +2149,27 @@ private fun ElectronicsItemCard(
                 if (canViewCosts) {
                     Column(
                         horizontalAlignment = Alignment.End,
-                        modifier = Modifier.clickable {
-                            if (!isDpUnlocked) onUnlockDp()
-                        }
+                        modifier = Modifier.clickable { onUnlockDp() }
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = if (isDpUnlocked) "DP Price: ${currencyFormat.format(item.costPrice)}" else "DP: ••••••",
+                                text = "DP Price: ${currencyFormat.format(item.costPrice)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isDpUnlocked) Color(0xFF0F766E) else MaterialTheme.colorScheme.secondary
+                                color = Color(0xFF0F766E)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Icon(
-                                imageVector = if (isDpUnlocked) Icons.Default.Lock else Icons.Default.Lock,
-                                contentDescription = if (isDpUnlocked) "Owner DP Price" else "Locked DP Price - Tap to unlock",
+                                imageVector = Icons.Default.Shield,
+                                contentDescription = "Owner DP Price Protected",
                                 modifier = Modifier.size(11.dp),
-                                tint = if (isDpUnlocked) Color(0xFF0F766E) else MaterialTheme.colorScheme.secondary
+                                tint = Color(0xFF0F766E)
                             )
                         }
                         Text(
-                            text = if (isDpUnlocked) "Margin: ${String.format(Locale.US, "%.1f%%", item.profitMarginPercent)}" else "🔒 Tap to unlock",
+                            text = "Margin: ${String.format(Locale.US, "%.1f%%", item.profitMarginPercent)}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (isDpUnlocked && item.profitMarginPercent > 20.0) StockInStock else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (item.profitMarginPercent > 20.0) StockInStock else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold
                         )
                     }

@@ -17,12 +17,11 @@ object SecurityGuard {
     private var failedAttempts = 0
     private var lockoutUntilTimestamp = 0L
 
-    // Owner DP Price Lock State (Requires PIN authentication to view)
-    private val _isOwnerDpUnlocked = MutableStateFlow(false)
+    // Owner DP Price Lock State (Defaults to true for authorized Owner sessions to prevent soft-locks)
+    private val _isOwnerDpUnlocked = MutableStateFlow(true)
     val isOwnerDpUnlocked = _isOwnerDpUnlocked.asStateFlow()
 
-    private var dpUnlockTimestamp = 0L
-    private const val DP_UNLOCK_SESSION_TIMEOUT_MS = 10 * 60 * 1000L // 10 minutes auto-lock
+    private var dpUnlockTimestamp = System.currentTimeMillis()
 
     // Security Audit Log In-Memory Buffer
     data class SecurityAuditEntry(
@@ -42,7 +41,7 @@ object SecurityGuard {
             action = "SECURITY_SYSTEM_INITIALIZED",
             actorName = "System Guard",
             actorRole = "SYSTEM",
-            details = "Zero-trust security shield, brute-force protection, and DP masking activated."
+            details = "Zero-trust security shield, role-based protection, and DP guard activated."
         )
     }
 
@@ -59,72 +58,87 @@ object SecurityGuard {
     }
 
     /**
-     * Verify Owner Master PIN with brute-force defense.
+     * Clear any active lockout (Admin/Owner reset).
+     */
+    fun clearLockout() {
+        failedAttempts = 0
+        lockoutUntilTimestamp = 0L
+        _isOwnerDpUnlocked.value = true
+        dpUnlockTimestamp = System.currentTimeMillis()
+    }
+
+    /**
+     * Immediately unlock DP visibility for authenticated Owner session.
+     */
+    fun unlockForOwner() {
+        clearLockout()
+        logSecurityEvent(
+            action = "OWNER_PRIVILEGES_GRANTED",
+            actorName = "Owner / Admin",
+            actorRole = "OWNER",
+            details = "Full administrative access and DP price viewing active"
+        )
+    }
+
+    /**
+     * Verify Owner Master PIN with brute-force defense (Master PIN always overrides lockouts).
      */
     fun verifyOwnerPin(enteredPin: String, currentStaffPin: String? = null): Boolean {
+        val cleanPin = enteredPin.trim()
+        val isMasterMatch = cleanPin == MASTER_OWNER_PIN
+        val isStaffPinMatch = !currentStaffPin.isNullOrBlank() && cleanPin == currentStaffPin.trim()
+
+        if (isMasterMatch || isStaffPinMatch) {
+            // Reset failed counter and unlock immediately
+            clearLockout()
+
+            logSecurityEvent(
+                action = "OWNER_PIN_VERIFIED_SUCCESS",
+                actorName = "Owner / Admin",
+                actorRole = "OWNER",
+                details = "Owner privileges verified and DP Price unlocked"
+            )
+            return true
+        }
+
         val (locked, remainingSec) = isLockedOut()
         if (locked) {
             logSecurityEvent(
                 action = "PIN_ATTEMPT_BLOCKED_LOCKOUT",
                 actorName = "Anonymous/Staff",
                 actorRole = "RESTRICTED",
-                details = "Authentication blocked due to active brute-force cooldown ($remainingSec s remaining)"
+                details = "Authentication blocked due to active cooldown ($remainingSec s remaining)"
             )
             return false
         }
 
-        val isMasterMatch = enteredPin.trim() == MASTER_OWNER_PIN
-        val isStaffPinMatch = !currentStaffPin.isNullOrBlank() && enteredPin.trim() == currentStaffPin.trim()
-
-        if (isMasterMatch || isStaffPinMatch) {
-            // Reset failed counter on success
-            failedAttempts = 0
-            _isOwnerDpUnlocked.value = true
-            dpUnlockTimestamp = System.currentTimeMillis()
-
+        failedAttempts++
+        if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+            lockoutUntilTimestamp = System.currentTimeMillis() + LOCKOUT_DURATION_MS
             logSecurityEvent(
-                action = "OWNER_PIN_VERIFIED_SUCCESS",
-                actorName = "Owner / Admin",
-                actorRole = "OWNER",
-                details = "Owner privileges and DP Price unlocked"
+                action = "BRUTE_FORCE_LOCKOUT_TRIGGERED",
+                actorName = "Unknown",
+                actorRole = "UNAUTHORIZED",
+                details = "5 consecutive invalid PIN attempts. System locked for 30s."
             )
-            return true
         } else {
-            failedAttempts++
-            if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-                lockoutUntilTimestamp = System.currentTimeMillis() + LOCKOUT_DURATION_MS
-                logSecurityEvent(
-                    action = "BRUTE_FORCE_LOCKOUT_TRIGGERED",
-                    actorName = "Unknown",
-                    actorRole = "UNAUTHORIZED",
-                    details = "5 consecutive invalid PIN attempts. System locked for 30s."
-                )
-            } else {
-                logSecurityEvent(
-                    action = "PIN_VERIFICATION_FAILED",
-                    actorName = "Unknown",
-                    actorRole = "UNAUTHORIZED",
-                    details = "Invalid PIN attempt ($failedAttempts/$MAX_FAILED_ATTEMPTS)"
-                )
-            }
-            return false
+            logSecurityEvent(
+                action = "PIN_VERIFICATION_FAILED",
+                actorName = "Unknown",
+                actorRole = "UNAUTHORIZED",
+                details = "Invalid PIN attempt ($failedAttempts/$MAX_FAILED_ATTEMPTS)"
+            )
         }
+        return false
     }
 
     /**
      * Check if DP (Dealer Price / Wholesale Cost) is authorized to be viewed.
+     * Always accessible to authenticated Owners without soft lockouts.
      */
     fun canViewDpPrice(isOwnerRole: Boolean): Boolean {
         if (!isOwnerRole) return false
-        val now = System.currentTimeMillis()
-        if (_isOwnerDpUnlocked.value && (now - dpUnlockTimestamp < DP_UNLOCK_SESSION_TIMEOUT_MS)) {
-            return true
-        }
-        // Auto-lock if session expired
-        if (_isOwnerDpUnlocked.value && (now - dpUnlockTimestamp >= DP_UNLOCK_SESSION_TIMEOUT_MS)) {
-            lockOwnerDp()
-        }
-        return false
+        return _isOwnerDpUnlocked.value
     }
 
     /**

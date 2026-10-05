@@ -186,7 +186,7 @@ fun StaffLoginScreen(
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.testTag("init_owner_button")
                                 ) {
-                                    Text("Initialize Store Owner: PARTH MEHTA (PIN: apple8901)")
+                                    Text("Initialize Universal Owner: PARTH MEHTA")
                                 }
                             }
                         }
@@ -362,14 +362,18 @@ fun StaffLoginScreen(
                                                 passwordError = null
                                             },
                                             label = { Text("Enter Password / PIN") },
-                                            placeholder = { Text("Password given by owner") },
+                                            placeholder = {
+                                                val isParth = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
+                                                    staff.username.equals("parth", ignoreCase = true)
+                                                Text(if (isParth) "Enter master password" else "Password given by owner")
+                                            },
                                             singleLine = true,
                                             isError = passwordError != null,
                                             supportingText = {
                                                 val isParth = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
                                                     staff.username.equals("parth", ignoreCase = true)
                                                 passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                                                    ?: if (isParth) Text("Universal Owner password: apple8901", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                                                    ?: if (isParth) Text("Universal Owner & Admin Account", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                                                     else null
                                             },
                                             visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),

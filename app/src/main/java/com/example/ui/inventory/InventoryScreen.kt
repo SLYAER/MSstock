@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -41,13 +42,17 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Dataset
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NorthWest
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Search
@@ -64,6 +69,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,6 +80,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -84,13 +94,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -182,11 +195,286 @@ fun InventoryScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.widthIn(max = 320.dp)
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Sidebar Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Memory,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column {
+                        Text(
+                            text = "MSstock",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Store Operations Portal",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Current Staff Profile Card (Password strictly hidden)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val isParth = staff?.displayName?.contains("PARTH MEHTA", ignoreCase = true) == true
+                        Surface(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape),
+                            color = if (isParth) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = if (isParth) "👑" else (staff?.displayName?.take(1) ?: "S"),
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = staff?.displayName ?: "Staff Member",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = if (isParth) "Universal Owner & Admin" else (staff?.staffRole?.badge ?: "Active Staff"),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Sidebar Option 1: Stock Catalog / Inventory
+                NavigationDrawerItem(
+                    label = { Text("Stock & Inventory") },
+                    selected = selectedCategory == "All" && searchQuery.isBlank() && stockFilter == StockFilter.ALL,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        viewModel.onSearchQueryChanged("")
+                        viewModel.onCategorySelected("All")
+                        viewModel.onStockFilterSelected(StockFilter.ALL)
+                    },
+                    icon = { Icon(Icons.Default.Inventory2, contentDescription = null) },
+                    badge = {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "${stats.totalItems}",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_stock")
+                )
+
+                // Sidebar Option 2: Manage Employees (Universal Owner & Admin)
+                NavigationDrawerItem(
+                    label = {
+                        Column {
+                            Text("Manage Employees")
+                            Text(
+                                if (canManageStaff) "Team roles & approvals" else "Owner & Admin access only",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontSize = 10.sp
+                            )
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        if (canManageStaff) {
+                            showStaffDialog = true
+                        } else {
+                            showPermissionAlert = true
+                        }
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.ManageAccounts,
+                            contentDescription = null,
+                            tint = if (canManageStaff) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    badge = {
+                        if (pendingStaffCount > 0) {
+                            Badge(containerColor = MaterialTheme.colorScheme.error) {
+                                Text("$pendingStaffCount")
+                            }
+                        } else if (staff?.staffRole == StaffRole.OWNER) {
+                            Text(
+                                "Admin",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_employees")
+                )
+
+                // Sidebar Option 3: Guided LED TV Explorer
+                NavigationDrawerItem(
+                    label = { Text("LED TV Guided Filter") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        if (canAccessHierarchy) {
+                            hierarchyInitialCategory = "LED TV"
+                            hierarchyInitialSize = "55\""
+                            showHierarchyDialog = true
+                        } else {
+                            showPermissionAlert = true
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Tv, contentDescription = null) },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_led_explorer")
+                )
+
+                // Sidebar Option 4: Stock Logs & Audit Trail
+                NavigationDrawerItem(
+                    label = { Text("Stock Logs & Audit Trail") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showLogsSheet = true
+                    },
+                    icon = { Icon(Icons.Default.History, contentDescription = null) },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_audit_logs")
+                )
+
+                // Sidebar Option 5: Register New Stock
+                if (canEditItemDetails) {
+                    NavigationDrawerItem(
+                        label = { Text("Register New Stock") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            itemToEdit = null
+                            showAddDialog = true
+                        },
+                        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                        modifier = Modifier
+                            .padding(NavigationDrawerItemDefaults.ItemPadding)
+                            .testTag("sidebar_nav_add_stock")
+                    )
+                }
+
+                // Sidebar Option 6: Seed Electronic Catalog
+                if (canViewCosts) {
+                    NavigationDrawerItem(
+                        label = { Text("Seed Sample Catalog") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            viewModel.seedSampleCatalog()
+                        },
+                        icon = { Icon(Icons.Default.Dataset, contentDescription = null) },
+                        modifier = Modifier
+                            .padding(NavigationDrawerItemDefaults.ItemPadding)
+                            .testTag("sidebar_nav_seed_catalog")
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Sidebar Option 7: Switch Staff / Sign Out
+                NavigationDrawerItem(
+                    label = { Text("Switch Staff / Sign Out") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showSignOutConfirm = true
+                    },
+                    icon = { Icon(Icons.Default.ExitToApp, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .padding(bottom = 16.dp)
+                        .testTag("sidebar_nav_signout")
+                )
+            }
+        }
+    ) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { scope.launch { drawerState.open() } },
+                            modifier = Modifier.testTag("sidebar_menu_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Open Sidebar Navigation Menu"
+                            )
+                        }
+                    },
+                    title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             modifier = Modifier
@@ -458,6 +746,7 @@ fun InventoryScreen(
                 }
             }
         }
+    }
     }
 
     // Product Detail & Specifications Sheet Dialog

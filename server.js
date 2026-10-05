@@ -324,8 +324,33 @@ function getAppHtml() {
       --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; }
     
+    .app-layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar Navigation Styles */
+    .sidebar { width: 260px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: 105; transition: transform 0.25s ease; flex-shrink: 0; }
+    .sidebar-header { padding: 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .sidebar-user { margin: 12px 14px 6px; padding: 12px; background: var(--surface-variant); border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.2s; }
+    .sidebar-user:hover { background: #e2e8f0; }
+    .sidebar-menu { padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; }
+    .sidebar-section-title { font-size: 10px; font-weight: 800; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; padding: 10px 8px 4px; }
+    .nav-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text); border: none; background: transparent; cursor: pointer; text-align: left; width: 100%; transition: all 0.15s; }
+    .nav-btn:hover { background: var(--surface-variant); color: var(--primary); }
+    .nav-btn.active { background: var(--primary-container); color: var(--primary); }
+    .nav-btn .nav-icon { font-size: 17px; width: 22px; text-align: center; }
+    .nav-badge { margin-left: auto; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: var(--primary); color: white; }
+    .nav-tag-admin { margin-left: auto; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: #fef3c7; color: #b45309; }
+    .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 104; }
+
+    .main-wrapper { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+    @media (max-width: 900px) {
+      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); box-shadow: var(--shadow-lg); }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-backdrop.active { display: block; }
+    }
+
     /* Header */
     header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
     .header-content { max-width: 1280px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
@@ -464,30 +489,111 @@ function getAppHtml() {
   </style>
 </head>
 <body>
-
-  <!-- Header -->
-  <header>
-    <div class="header-content">
-      <div class="logo-area">
-        <div class="logo-icon">⚡</div>
-        <div>
-          <div class="brand-title">MSstock Web</div>
-          <div class="brand-sub">Electronics Store & POS</div>
-        </div>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="user-profile" id="userProfileBtn" onclick="openLoginModal()">
-          <div class="user-avatar" id="headerAvatar">P</div>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+  <div class="app-layout">
+    <!-- Interactive Sidebar -->
+    <aside class="sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="logo-area">
+          <div class="logo-icon">⚡</div>
           <div>
-            <div class="user-name" id="headerUserName">PARTH MEHTA</div>
-            <div class="user-badge" id="headerUserBadge">👑 Universal Owner & Admin</div>
+            <div class="brand-title">MSstock</div>
+            <div class="brand-sub">Inventory Portal</div>
           </div>
         </div>
-        <button class="btn-secondary" onclick="openTeamModal()" id="teamManageBtn" style="padding: 8px 14px; font-size: 12px; font-weight: 700;">👥 Team</button>
+        <button class="btn-icon" id="sidebarCloseBtn" onclick="closeSidebar()" style="display: none;">✕</button>
       </div>
-    </div>
-  </header>
+
+      <!-- Current Profile in Sidebar (Strictly no password shown) -->
+      <div class="sidebar-user" onclick="openLoginModal()" title="Click to switch profile">
+        <div class="user-avatar" id="sidebarAvatar">P</div>
+        <div style="flex: 1; min-width: 0;">
+          <div class="user-name" id="sidebarUserName" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">PARTH MEHTA</div>
+          <div class="user-badge" id="sidebarUserBadge" style="font-size: 11px;">👑 Universal Admin</div>
+        </div>
+        <span style="font-size: 13px; opacity: 0.6;">⚙️</span>
+      </div>
+
+      <!-- Sidebar Functional Navigation -->
+      <div class="sidebar-menu">
+        <div class="sidebar-section-title">INVENTORY & SALES</div>
+
+        <button class="nav-btn active" id="navStockBtn" onclick="selectSidebarView('stock')">
+          <span class="nav-icon">📦</span>
+          <span>Stock Catalog</span>
+          <span class="nav-badge" id="sidebarTotalCount">11</span>
+        </button>
+
+        <button class="nav-btn" id="navTvExplorerBtn" onclick="openHierarchyModal()">
+          <span class="nav-icon">📺</span>
+          <span>LED TV Explorer</span>
+        </button>
+
+        <button class="nav-btn" id="navAddStockBtn" onclick="openProductModal()">
+          <span class="nav-icon">➕</span>
+          <span>Register Stock</span>
+        </button>
+
+        <div class="sidebar-section-title">ADMINISTRATION</div>
+
+        <button class="nav-btn" id="navEmployeesBtn" onclick="openTeamModal()">
+          <span class="nav-icon">👥</span>
+          <span>Manage Employees</span>
+          <span class="nav-tag-admin">Owner</span>
+        </button>
+
+        <button class="nav-btn" id="navLogsBtn" onclick="openLogsModal()">
+          <span class="nav-icon">📜</span>
+          <span>Audit Logs</span>
+        </button>
+
+        <button class="nav-btn" id="navValuationBtn" onclick="scrollToValuation()">
+          <span class="nav-icon">📊</span>
+          <span>Valuation & Margins</span>
+        </button>
+
+        <div class="sidebar-section-title">SYSTEM</div>
+
+        <button class="nav-btn" onclick="seedSampleCatalog()">
+          <span class="nav-icon">🔄</span>
+          <span>Seed Sample Catalog</span>
+        </button>
+
+        <button class="nav-btn" onclick="openLoginModal()" style="color: var(--danger);">
+          <span class="nav-icon">🚪</span>
+          <span>Switch / Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Header -->
+      <header>
+        <div class="header-content">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="btn-icon" onclick="toggleSidebar()" id="sidebarToggleBtn" title="Toggle Sidebar">☰</button>
+            <div class="logo-area">
+              <div class="logo-icon">⚡</div>
+              <div>
+                <div class="brand-title">MSstock Web Portal</div>
+                <div class="brand-sub">Electronics Store & POS</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="user-profile" id="userProfileBtn" onclick="openLoginModal()">
+              <div class="user-avatar" id="headerAvatar">P</div>
+              <div>
+                <div class="user-name" id="headerUserName">PARTH MEHTA</div>
+                <div class="user-badge" id="headerUserBadge">👑 Universal Owner & Admin</div>
+              </div>
+            </div>
+            <button class="btn-secondary" onclick="openTeamModal()" id="teamManageBtn" style="padding: 8px 14px; font-size: 12px; font-weight: 700;">👥 Team</button>
+          </div>
+        </div>
+      </header>
 
   <!-- Main Container -->
   <main>
@@ -574,6 +680,8 @@ function getAppHtml() {
     <!-- Product Grid -->
     <div class="product-grid" id="productGrid"></div>
   </main>
+  </div> <!-- /.main-wrapper -->
+  </div> <!-- /.app-layout -->
 
   <!-- Floating Add Product Button -->
   <button class="fab" onclick="openAddProductModal()" title="Register New Stock Item">+</button>
@@ -723,7 +831,7 @@ function getAppHtml() {
     <div class="modal">
       <button class="close-btn" onclick="closeModal('loginModal')">✕</button>
       <div class="modal-title">🔐 Staff & Owner Portal</div>
-      <div class="modal-sub">Log in with PARTH MEHTA (password: apple8901) or switch team members</div>
+      <div class="modal-sub">Authenticate session as Universal Owner & Admin or select team member</div>
 
       <div id="staffListArea" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;"></div>
 
@@ -731,7 +839,7 @@ function getAppHtml() {
         <div style="font-weight: 700; margin-bottom: 6px;" id="loginTargetName">Logging in as PARTH MEHTA</div>
         <div class="form-group">
           <label class="form-label">Password / PIN</label>
-          <input type="password" id="loginPasswordInput" class="form-control" placeholder="Enter password (hint: apple8901)">
+          <input type="password" id="loginPasswordInput" class="form-control" placeholder="Enter secure password">
         </div>
         <button class="btn-submit" onclick="submitLogin()">Unlock Session</button>
       </div>
@@ -746,6 +854,17 @@ function getAppHtml() {
       <div class="modal-sub">Manage staff members and grant Guided LED Filter access</div>
 
       <div id="teamMembersList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Stock Audit Logs & Transactions -->
+  <div class="modal-overlay" id="logsModal">
+    <div class="modal" style="max-width: 680px;">
+      <button class="close-btn" onclick="closeModal('logsModal')">✕</button>
+      <div class="modal-title">📜 Stock Logs & Audit Trail</div>
+      <div class="modal-sub">Real-time history of sales, stock adjustments, and restocks with employee attribution</div>
+      <div id="logsModalContent" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;">
+      </div>
     </div>
   </div>
 
@@ -808,6 +927,13 @@ function getAppHtml() {
       const isOwner = staff.displayName.toUpperCase().includes('PARTH MEHTA') || staff.role === 'OWNER';
       document.getElementById('headerUserBadge').textContent = isOwner ? '👑 Universal Owner & Admin' : staff.role;
       
+      const sbAvatar = document.getElementById('sidebarAvatar');
+      if (sbAvatar) sbAvatar.textContent = isOwner ? '👑' : (staff.displayName[0] || 'U');
+      const sbName = document.getElementById('sidebarUserName');
+      if (sbName) sbName.textContent = staff.displayName;
+      const sbBadge = document.getElementById('sidebarUserBadge');
+      if (sbBadge) sbBadge.textContent = isOwner ? '👑 Universal Admin' : staff.role;
+
       const marginCard = document.getElementById('statMarginCard');
       if (marginCard) {
         marginCard.style.display = isOwner ? 'block' : 'none';
@@ -823,6 +949,8 @@ function getAppHtml() {
       const outOfStock = items.filter(it => it.quantity <= 0).length;
 
       document.getElementById('statTotalItems').textContent = items.length;
+      const sbCount = document.getElementById('sidebarTotalCount');
+      if (sbCount) sbCount.textContent = items.length;
       document.getElementById('statTotalUnits').textContent = totalUnits;
       document.getElementById('statRetailValue').textContent = '$' + retailVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
@@ -1295,8 +1423,8 @@ function getAppHtml() {
       appState.loginTargetStaff = staff;
       document.getElementById('loginTargetName').textContent = 'Logging in as ' + staff.displayName;
       const isParth = staff.displayName.toUpperCase().includes('PARTH MEHTA');
-      document.getElementById('loginPasswordInput').placeholder = isParth ? 'Enter password (apple8901)' : 'Enter staff password';
-      document.getElementById('loginPasswordInput').value = isParth ? 'apple8901' : '';
+      document.getElementById('loginPasswordInput').placeholder = isParth ? 'Enter master password' : 'Enter staff password';
+      document.getElementById('loginPasswordInput').value = '';
       document.getElementById('passwordEntryBox').style.display = 'block';
     }
 
@@ -1318,10 +1446,116 @@ function getAppHtml() {
           renderProducts();
           showToast('Welcome, ' + result.staff.displayName);
         } else {
-          alert('Incorrect password. For PARTH MEHTA use apple8901');
+          alert('Incorrect password. Please enter the valid master password.');
         }
       } catch (e) {
         alert('Login failed');
+      }
+    }
+
+    // Sidebar Interactions & Features
+    function selectSidebarView(view) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      if (view === 'stock') {
+        const btn = document.getElementById('navStockBtn');
+        if (btn) btn.classList.add('active');
+        appState.searchQuery = '';
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+        selectCategoryChip('All');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      closeSidebar();
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById('appSidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (sb) sb.classList.toggle('open');
+      if (bd) bd.classList.toggle('active');
+    }
+
+    function closeSidebar() {
+      const sb = document.getElementById('appSidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (sb) sb.classList.remove('open');
+      if (bd) bd.classList.remove('active');
+    }
+
+    function scrollToValuation() {
+      closeSidebar();
+      const el = document.querySelector('.stats-grid');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openProductModal() {
+      closeSidebar();
+      openAddProductModal();
+    }
+
+    function openHierarchyModal() {
+      closeSidebar();
+      openGuidedModal();
+    }
+
+    function openLogsModal() {
+      closeSidebar();
+      const container = document.getElementById('logsModalContent');
+      if (!appState.logs || appState.logs.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 24px;">No transaction logs recorded yet.</div>';
+      } else {
+        container.innerHTML = appState.logs.slice().reverse().map(log => {
+          const isSale = log.actionType === 'SALE';
+          const isRestock = log.actionType === 'RESTOCK';
+          const badgeBg = isSale ? 'var(--warning-bg)' : (isRestock ? 'var(--success-bg)' : 'var(--primary-container)');
+          const badgeColor = isSale ? 'var(--warning)' : (isRestock ? 'var(--success)' : 'var(--primary)');
+          const timeStr = new Date(log.timestamp).toLocaleString();
+          return \`
+            <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--surface); display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 11px; font-weight: 800; background: \${badgeBg}; color: \${badgeColor}; padding: 2px 7px; border-radius: 6px;">\${log.actionType}</span>
+                  <span style="font-weight: 700; font-size: 14px;">\${log.itemName}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  \${log.reason || 'Inventory operation'} • SKU: \${log.sku || 'N/A'}
+                </div>
+                <div style="font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 4px;">
+                  Staff: \${log.staffName || 'PARTH MEHTA'} (\${log.staffRole || 'OWNER'}) • \${timeStr}
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 14px; font-weight: 800; color: \${isSale ? 'var(--danger)' : 'var(--success)'};">
+                  \${isSale ? '-' : '+'}\${Math.abs(log.changeAmount || 1)} units
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted);">
+                  Stock: \${log.newQuantity}
+                </div>
+              </div>
+            </div>
+          \`;
+        }).join('');
+      }
+      document.getElementById('logsModal').classList.add('active');
+    }
+
+    async function seedSampleCatalog() {
+      closeSidebar();
+      const isOwner = appState.currentStaff && (appState.currentStaff.displayName.includes('PARTH MEHTA') || appState.currentStaff.role === 'OWNER');
+      if (!isOwner) {
+        alert('Only Universal Owner & Admin PARTH MEHTA can reset/seed sample catalog.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/seed', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          await loadData();
+          showToast('Sample catalog seeded successfully (' + data.count + ' items)');
+        }
+      } catch (e) {
+        await loadData();
+        showToast('Catalog refreshed');
       }
     }
 
@@ -1602,6 +1836,20 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+    return;
+  }
+
+  if (pathname === '/api/seed' && method === 'POST') {
+    try {
+      const db = getDatabase();
+      db.items = JSON.parse(JSON.stringify(INITIAL_ITEMS));
+      saveDatabase(db);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, count: INITIAL_ITEMS.length }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
     return;
   }
 

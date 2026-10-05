@@ -1,0 +1,228 @@
+{
+  "entities": {
+    "ElectronicsItem": {
+      "title": "ElectronicsItem",
+      "description": "An electronic product inventory record with pricing, stock level, specs, and status.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the item"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the merchant who owns this inventory item"
+        },
+        "name": {
+          "type": "string",
+          "description": "Product display name"
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock Keeping Unit or barcode string"
+        },
+        "category": {
+          "type": "string",
+          "description": "Electronics category (e.g. Smartphones, Audio, Laptops, Accessories)"
+        },
+        "brand": {
+          "type": "string",
+          "description": "Manufacturer or brand name"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model number or specifications"
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Current units in stock"
+        },
+        "minStockThreshold": {
+          "type": "integer",
+          "description": "Low-stock alert threshold"
+        },
+        "costPrice": {
+          "type": "number",
+          "description": "Unit purchase / wholesale cost in dollars"
+        },
+        "sellingPrice": {
+          "type": "number",
+          "description": "Unit retail selling price in dollars"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Condition of device (New, Refurbished, Open Box, Used)"
+        },
+        "location": {
+          "type": "string",
+          "description": "Shelf, aisle, or bin storage location"
+        },
+        "warrantyMonths": {
+          "type": "integer",
+          "description": "Warranty duration in months"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Internal notes or supplier info"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of creation; clients must pass serverTimestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last update; clients must pass serverTimestamp"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "sku",
+        "category",
+        "brand",
+        "quantity",
+        "minStockThreshold",
+        "costPrice",
+        "sellingPrice",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StockLog": {
+      "title": "StockLog",
+      "description": "Audit record of inventory level changes with staff attribution.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the log entry"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the merchant"
+        },
+        "itemId": {
+          "type": "string",
+          "description": "ID of the inventory item affected"
+        },
+        "itemName": {
+          "type": "string",
+          "description": "Snapshot of item name at time of adjustment"
+        },
+        "changeAmount": {
+          "type": "integer",
+          "description": "Quantity change delta (+5, -1, etc.)"
+        },
+        "previousQuantity": {
+          "type": "integer",
+          "description": "Stock count before change"
+        },
+        "newQuantity": {
+          "type": "integer",
+          "description": "Stock count after change"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for adjustment (Restock, Sale, Return, Damage, Audit)"
+        },
+        "staffName": {
+          "type": "string",
+          "description": "Name of the staff member who performed the action"
+        },
+        "staffRole": {
+          "type": "string",
+          "description": "Role of the staff member (Owner, Manager, Sales, Clerk)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the transaction; clients must pass serverTimestamp"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "itemId",
+        "itemName",
+        "changeAmount",
+        "previousQuantity",
+        "newQuantity",
+        "reason",
+        "createdAt"
+      ]
+    },
+    "StaffMember": {
+      "title": "StaffMember",
+      "description": "A store employee profile with password and assigned role (Owner, Manager, Sales, Clerk).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the staff member"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the store account"
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique staff login identifier"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full name of staff member"
+        },
+        "role": {
+          "type": "string",
+          "description": "Assigned permission role (OWNER, MANAGER, SALES, CLERK)"
+        },
+        "pin": {
+          "type": "string",
+          "description": "Password or PIN code for staff login"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether staff account is currently active"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "username",
+        "displayName",
+        "role",
+        "pin",
+        "isActive",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/items/{itemId}": {
+      "schema": "ElectronicsItem",
+      "description": "Electronics inventory catalog items for the authenticated store"
+    },
+    "/users/{userId}/stock_logs/{logId}": {
+      "schema": "StockLog",
+      "description": "Stock change history logs with staff attribution"
+    },
+    "/users/{userId}/staff/{staffId}": {
+      "schema": "StaffMember",
+      "description": "Store staff profiles with passwords and roles"
+    }
+  }
+}

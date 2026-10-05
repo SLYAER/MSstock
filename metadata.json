@@ -1,0 +1,6 @@
+{
+  "name": "MSstock",
+  "description": "Electronics store inventory management with role-based staff access, password protection, and real-time cloud database",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

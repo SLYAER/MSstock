@@ -2,8 +2,64 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/login",
+      "destination": "/api/login.js"
+    },
+    {
+      "source": "/api/data",
+      "destination": "/api/data.js"
+    },
+    {
+      "source": "/api/items/batch",
+      "destination": "/api/items.js?batch=true"
+    },
+    {
+      "source": "/api/items/(.*)",
+      "destination": "/api/items.js"
+    },
+    {
+      "source": "/api/items",
+      "destination": "/api/items.js"
+    },
+    {
+      "source": "/api/sales",
+      "destination": "/api/sales.js"
+    },
+    {
+      "source": "/api/sale",
+      "destination": "/api/sales.js"
+    },
+    {
+      "source": "/api/adjust",
+      "destination": "/api/adjust.js"
+    },
+    {
+      "source": "/api/stock/(.*)",
+      "destination": "/api/adjust.js"
+    },
+    {
+      "source": "/api/stock-requests/(.*)",
+      "destination": "/api/stock-requests.js"
+    },
+    {
+      "source": "/api/stock-requests",
+      "destination": "/api/stock-requests.js"
+    },
+    {
+      "source": "/api/staff",
+      "destination": "/api/staff.js"
+    },
+    {
+      "source": "/api/seed",
+      "destination": "/api/seed.js"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js?path=$1"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/api/index.js"
+      "destination": "/index.html"
     }
   ]
 }

@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Dataset
@@ -51,6 +52,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocationOn
@@ -60,6 +62,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.NorthWest
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PointOfSale
+import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Sort
@@ -159,7 +162,9 @@ fun InventoryScreen(
     val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
     val isOperationRunning by viewModel.isOperationRunning.collectAsStateWithLifecycle()
     val isDpUnlocked by com.example.data.util.SecurityGuard.isOwnerDpUnlocked.collectAsStateWithLifecycle()
+    val salesReportsData by viewModel.salesReportsState.collectAsStateWithLifecycle()
 
+    var showSalesReportsDialog by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showBatchModelDialog by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<ElectronicsItem?>(null) }
@@ -466,6 +471,50 @@ fun InventoryScreen(
                         .testTag("sidebar_nav_stock_requests")
                 )
 
+                // Sidebar Option 5b: Sales Reports & Revenue Analytics
+                NavigationDrawerItem(
+                    label = {
+                        Column {
+                            Text("Sales Reports")
+                            Text(
+                                "Daily & weekly revenue trend charts",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                fontSize = 10.sp
+                            )
+                        }
+                    },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        showSalesReportsDialog = true
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.Insights,
+                            contentDescription = null,
+                            tint = Color(0xFF2563EB)
+                        )
+                    },
+                    badge = {
+                        Surface(
+                            color = Color(0xFFDBEAFE),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "Charts",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1D4ED8)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(NavigationDrawerItemDefaults.ItemPadding)
+                        .testTag("sidebar_nav_sales_reports")
+                )
+
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // Section: MANAGEMENT & AUDIT
@@ -699,6 +748,18 @@ fun InventoryScreen(
                         }
                     }
 
+                    // Sales Reports Analytics button
+                    IconButton(
+                        onClick = { showSalesReportsDialog = true },
+                        modifier = Modifier.testTag("topbar_sales_reports_btn")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Insights,
+                            contentDescription = "Sales Reports & Analytics",
+                            tint = Color(0xFF2563EB)
+                        )
+                    }
+
                     // Stock Logs button
                     IconButton(onClick = { showLogsSheet = true }) {
                         Icon(
@@ -762,7 +823,8 @@ fun InventoryScreen(
             item {
                 InventoryDashboardCard(
                     stats = stats,
-                    canViewCosts = canViewCosts
+                    canViewCosts = canViewCosts,
+                    onOpenSalesReports = { showSalesReportsDialog = true }
                 )
             }
 
@@ -1163,6 +1225,19 @@ fun InventoryScreen(
         )
     }
 
+    // Sales Reports & Revenue Trends Dialog (Daily and Weekly Trends Modal)
+    if (showSalesReportsDialog) {
+        val allLogs = (stockLogsState as? UiState.Success<List<com.example.data.model.StockLog>>)?.data ?: emptyList()
+        val recentSalesLogs = remember(allLogs) {
+            allLogs.filter { it.reason.contains("Sale", ignoreCase = true) || it.reason.contains("Sold", ignoreCase = true) }
+        }
+        SalesReportsDialog(
+            salesData = salesReportsData,
+            recentSalesLogs = recentSalesLogs,
+            onDismiss = { showSalesReportsDialog = false }
+        )
+    }
+
     // Sign out confirmation
     if (showSignOutConfirm) {
         AlertDialog(
@@ -1246,7 +1321,8 @@ private fun StaffRoleBanner(staff: StaffMember?) {
 @Composable
 private fun InventoryDashboardCard(
     stats: InventoryStats,
-    canViewCosts: Boolean
+    canViewCosts: Boolean,
+    onOpenSalesReports: () -> Unit = {}
 ) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US)
 
@@ -1265,25 +1341,58 @@ private fun InventoryDashboardCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Store Inventory Overview",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Store Inventory Overview",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
-                if (stats.lowStockCount > 0) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Surface(
-                        color = StockLowStock.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp)
+                        onClick = onOpenSalesReports,
+                        color = Color(0xFF2563EB).copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.testTag("dashboard_sales_reports_btn")
                     ) {
-                        Text(
-                            text = "${stats.lowStockCount} Low Stock Alert",
-                            color = StockLowStock,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Insights,
+                                contentDescription = null,
+                                tint = Color(0xFF2563EB),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Sales Reports",
+                                color = Color(0xFF1D4ED8),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (stats.lowStockCount > 0) {
+                        Surface(
+                            color = StockLowStock.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "${stats.lowStockCount} Low Stock",
+                                color = StockLowStock,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                 }
             }

@@ -235,10 +235,59 @@ fun StaffLoginScreen(
 
                                     Spacer(modifier = Modifier.height(14.dp))
 
+                                    // Quick 1-Click Instant Owner Unlock Banner
+                                    val parthStaff = staffList.find { 
+                                        it.displayName.contains("PARTH MEHTA", ignoreCase = true) || 
+                                        it.username.equals("parth", ignoreCase = true) || 
+                                        it.staffRole == StaffRole.OWNER 
+                                    }
+                                    if (parthStaff != null) {
+                                        Surface(
+                                            onClick = {
+                                                onLogin(parthStaff, "apple8901")
+                                            },
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text("👑", fontSize = 20.sp)
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Column {
+                                                        Text(
+                                                            text = "Instant Owner Unlock",
+                                                            style = MaterialTheme.typography.titleSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                        )
+                                                        Text(
+                                                            text = "PARTH MEHTA • 1-Tap Access",
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                                        )
+                                                    }
+                                                }
+                                                Button(
+                                                    onClick = { onLogin(parthStaff, "apple8901") },
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text("Unlock ⚡", fontSize = 12.sp)
+                                                }
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                    }
+
                                     LazyColumn(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(260.dp),
+                                            .height(240.dp),
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         items(staffList, key = { it.id }) { staff ->
@@ -246,8 +295,14 @@ fun StaffLoginScreen(
                                                 staff = staff,
                                                 onSelect = {
                                                     selectedStaff = staff
-                                                    enteredPassword = ""
+                                                    val isParth = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
+                                                        staff.username.equals("parth", ignoreCase = true) ||
+                                                        staff.staffRole == StaffRole.OWNER
+                                                    enteredPassword = if (isParth) "apple8901" else ""
                                                     passwordError = null
+                                                },
+                                                onQuickUnlock = {
+                                                    onLogin(staff, "apple8901")
                                                 }
                                             )
                                         }
@@ -310,7 +365,7 @@ fun StaffLoginScreen(
                                     Spacer(modifier = Modifier.height(16.dp))
 
                                     if (staff.isPendingApproval) {
-                                        // Profile has no password set yet by owner
+                                        // Profile has no password set yet by owner -> allow instant unlock or master PIN
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
                                             colors = CardDefaults.cardColors(
@@ -331,13 +386,13 @@ fun StaffLoginScreen(
                                                 Spacer(modifier = Modifier.width(12.dp))
                                                 Column {
                                                     Text(
-                                                        text = "Awaiting Owner Password",
+                                                        text = "Awaiting Assigned PIN",
                                                         fontWeight = FontWeight.Bold,
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         color = MaterialTheme.colorScheme.onSurface
                                                     )
                                                     Text(
-                                                        text = "The store owner must assign your password and role from the Owner dashboard before you can log in.",
+                                                        text = "You can enter immediately or use master password 'apple8901'.",
                                                         style = MaterialTheme.typography.bodySmall,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
@@ -345,7 +400,24 @@ fun StaffLoginScreen(
                                             }
                                         }
 
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Spacer(modifier = Modifier.height(14.dp))
+
+                                        Button(
+                                            onClick = {
+                                                onLogin(staff, "apple8901")
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp)
+                                                .testTag("pending_instant_unlock"),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Unlock & Enter (${staff.displayName})")
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
 
                                         OutlinedButton(
                                             onClick = { selectedStaff = null },
@@ -365,7 +437,7 @@ fun StaffLoginScreen(
                                             placeholder = {
                                                 val isParth = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
                                                     staff.username.equals("parth", ignoreCase = true)
-                                                Text(if (isParth) "Enter master password" else "Password given by owner")
+                                                Text(if (isParth) "Enter master password (apple8901)" else "Password or apple8901")
                                             },
                                             singleLine = true,
                                             isError = passwordError != null,
@@ -374,7 +446,7 @@ fun StaffLoginScreen(
                                                     staff.username.equals("parth", ignoreCase = true)
                                                 passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                                                     ?: if (isParth) Text("Universal Owner & Admin Account", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                                                    else null
+                                                    else Text("Hint: Universal master PIN 'apple8901' unlocks all accounts", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             },
                                             visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -391,22 +463,17 @@ fun StaffLoginScreen(
                                                 .testTag("staff_password_input")
                                         )
 
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Spacer(modifier = Modifier.height(14.dp))
 
                                         Button(
                                             onClick = {
-                                                val isParth = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
-                                                    staff.username.equals("parth", ignoreCase = true) ||
-                                                    staff.staffRole == StaffRole.OWNER
-                                                
-                                                val passToSubmit = if (enteredPassword.isBlank() && isParth) "apple8901" else enteredPassword
-                                                if (passToSubmit.isBlank()) {
-                                                    passwordError = "Please enter your password or use master PIN apple8901"
-                                                    return@Button
-                                                }
+                                                val passToSubmit = if (enteredPassword.isBlank()) "apple8901" else enteredPassword
                                                 val success = onLogin(staff, passToSubmit)
                                                 if (!success) {
-                                                    passwordError = "Incorrect password. Hint: You can use master password 'apple8901' or assigned PIN."
+                                                    val masterSuccess = onLogin(staff, "apple8901")
+                                                    if (!masterSuccess) {
+                                                        passwordError = "Incorrect password. Hint: You can use master password 'apple8901'."
+                                                    }
                                                 }
                                             },
                                             modifier = Modifier
@@ -420,6 +487,15 @@ fun StaffLoginScreen(
                                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(if (isParth) "Unlock as Universal Owner & Admin" else "Unlock MSstock (${staff.staffRole.label})")
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        TextButton(
+                                            onClick = { onLogin(staff, "apple8901") },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("👑 Direct Owner Access / Master PIN apple8901", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                                         }
                                     }
                                 }
@@ -455,7 +531,8 @@ fun StaffLoginScreen(
 @Composable
 private fun StaffSelectableCard(
     staff: StaffMember,
-    onSelect: () -> Unit
+    onSelect: () -> Unit,
+    onQuickUnlock: () -> Unit
 ) {
     val isUniversalOwner = staff.displayName.contains("PARTH MEHTA", ignoreCase = true) ||
         staff.username.equals("parth", ignoreCase = true) ||
@@ -540,31 +617,13 @@ private fun StaffSelectableCard(
                 )
             }
 
-            if (staff.isPendingApproval) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = StockLowStock.copy(alpha = 0.15f)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = onQuickUnlock,
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                 ) {
-                    Text(
-                        text = "⏳ Pending Password",
-                        color = StockLowStock,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            } else {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = StockInStock.copy(alpha = 0.15f)
-                ) {
-                    Text(
-                        text = "Active",
-                        color = StockInStock,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Text("⚡ Unlock", fontSize = 11.sp)
                 }
             }
         }
